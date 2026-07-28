@@ -38,14 +38,14 @@ Keep task tracking lightweight. Do not create separate project-management infras
 ## 1. Current Status
 
 **Overall status:** Implementation in progress  
-**Current milestone:** M1 — data pipeline and calculations  
+**Current milestone:** M2 — public website  
 **Production readiness:** Not started  
 
 ### Immediate next actions
 
 - Configure a Neon database and verify the local connection.
-- Implement the State Street ingestion and calculation pipeline.
-- Complete one end-to-end XLK refresh before extending to all funds.
+- Configure `DATABASE_URL` and `TWELVE_DATA_API_KEY`, migrate, and run the XLK/full refresh.
+- Implement the public dashboard and detail routes against the calculated database rows.
 - Implement one complete vertical slice using XLK before processing the full ETF universe.
 - Provision the selected VPS deployment target before the production milestone.
 
@@ -1182,21 +1182,21 @@ Keep this section updated throughout implementation.
 
 ### M1 — Data pipeline and calculations
 
-- [ ] M1-01 Add Drizzle migrations for `fund`, `fund_daily`, `sector_daily`, `signal_event`, `job_run`, and `backtest_run`.
-- [ ] M1-02 Seed the 11 ETF records.
-- [ ] M1-03 Implement the State Street downloader.
-- [ ] M1-04 Implement XLSX parsing for one ETF.
-- [ ] M1-05 Implement idempotent `fund_daily` upserts.
-- [ ] M1-06 Implement daily flow and flow-as-%-of-AUM calculations.
-- [ ] M1-07 Implement basic split detection and quality flags.
-- [ ] M1-08 Complete the XLK vertical slice from download to database.
-- [ ] M1-09 Extend ingestion to all 11 ETFs.
-- [ ] M1-10 Add daily ETF and SPY price ingestion.
-- [ ] M1-11 Implement rolling flow metrics.
-- [ ] M1-12 Implement Flow Score, DCA Score, states, and ranks.
-- [ ] M1-13 Implement `signal_event` generation.
-- [ ] M1-14 Implement the full daily refresh job.
-- [ ] M1-15 Add calculation, parser, and idempotency tests.
+- [x] M1-01 Add Drizzle migrations for `fund`, `fund_daily`, `sector_daily`, `signal_event`, `job_run`, and `backtest_run`.
+- [x] M1-02 Seed the 11 ETF records (plus inactive SPY benchmark reference).
+- [x] M1-03 Implement the State Street downloader.
+- [x] M1-04 Implement XLSX parsing for one ETF.
+- [x] M1-05 Implement idempotent `fund_daily` upserts.
+- [x] M1-06 Implement daily flow and flow-as-%-of-AUM calculations.
+- [x] M1-07 Implement basic split detection and quality flags.
+- [ ] M1-08 Complete the XLK vertical slice from download to database (BLOCKED — requires `DATABASE_URL` and `TWELVE_DATA_API_KEY`).
+- [x] M1-09 Extend ingestion to all 11 ETFs.
+- [x] M1-10 Add daily ETF and SPY price ingestion using Twelve Data adjusted prices.
+- [x] M1-11 Implement rolling flow metrics.
+- [x] M1-12 Implement Flow Score, DCA Score, states, and ranks.
+- [x] M1-13 Implement idempotent `signal_event` generation.
+- [x] M1-14 Implement the full daily refresh job.
+- [x] M1-15 Add calculation, parser, and idempotency tests.
 
 **M1 acceptance:** A single command or API call refreshes all 11 sectors and produces valid dashboard-ready rows.
 
@@ -1313,4 +1313,5 @@ Add one concise entry after each meaningful implementation session.
 ```text
 2026-07-28 — Replaced the original over-engineered plan with a minimal architecture using Bun, TanStack Start, Neon, one FastAPI service, Vercel, GitHub Actions, and a VPS-or-Cloud-Run deployment choice.
 2026-07-28 — Initialized Git and the Bun monorepo; scaffolded TanStack Start, Tailwind/shadcn, FastAPI, and Drizzle; validated the four required NAV-history columns across all 11 State Street files; selected Twelve Data adjusted prices and VPS deployment.
+2026-07-28 — Added the six-table Drizzle migration, fund seeding, streaming State Street/Twelve Data ingestion, flow and split calculations, rolling scores/states/ranks, notifications, and an idempotent daily job; eight analytics tests pass. Live database validation remains credential-blocked.
 ```

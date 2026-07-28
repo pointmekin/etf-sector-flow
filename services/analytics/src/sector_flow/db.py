@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from contextlib import contextmanager
 from typing import Any
 
@@ -32,3 +33,14 @@ def fetch_all(query: str, params: tuple[Any, ...] = ()) -> list[dict[str, Any]]:
     with connection() as conn, conn.cursor() as cursor:
         cursor.execute(query, params)
         return list(cursor.fetchall())
+
+
+def execute(query: str, params: tuple[Any, ...] = ()) -> dict[str, Any] | None:
+    with connection() as conn, conn.cursor() as cursor:
+        cursor.execute(query, params)
+        return cursor.fetchone() if cursor.description else None
+
+
+def execute_many(query: str, params: Iterable[tuple[Any, ...]]) -> None:
+    with connection() as conn, conn.cursor() as cursor:
+        cursor.executemany(query, params)
