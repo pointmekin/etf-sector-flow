@@ -25,7 +25,8 @@ def test_backtest_request_rejects_same_day_execution() -> None:
 
 
 @pytest.mark.parametrize(
-    "strategy", ["top_3_momentum", "spy_core_flow", "spy_core_momentum"]
+    "strategy",
+    ["top_3_momentum", "spy_core_flow", "spy_core_momentum", "spy_core_momentum_flow"],
 )
 def test_backtest_request_accepts_benchmark_aware_strategies(strategy: str) -> None:
     assert BacktestRequest(strategy=strategy).strategy == strategy

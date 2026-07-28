@@ -1259,8 +1259,8 @@ Keep this section updated throughout implementation.
 - [x] M5-02 Report complete SPY, excess-return, tracking-error, and information-ratio metrics.
 - [x] M5-03 Add a monthly top-three trailing-12-month sector-momentum strategy.
 - [x] M5-04 Add SPY-core variants for flow-ranked and momentum-ranked active sleeves.
-- [ ] M5-05 Add standardized flow-surprise confirmation and confidence gating. (IN PROGRESS — 2026-07-28)
-- [ ] M5-06 Expose the new strategies, assumptions, and metrics in the web application.
+- [x] M5-05 Add standardized flow-surprise confirmation and confidence gating.
+- [ ] M5-06 Expose the new strategies, assumptions, and metrics in the web application. (IN PROGRESS — 2026-07-28)
 - [ ] M5-07 Add unit and integration coverage for timing, selection, weights, and reporting.
 
 **M5 acceptance:** The strategy lab can compare flow and momentum challengers against SPY using explicit timing assumptions and benchmark-relative risk metrics.

@@ -34,6 +34,7 @@ class BacktestRequest(BaseModel):
         "top_3_momentum",
         "spy_core_flow",
         "spy_core_momentum",
+        "spy_core_momentum_flow",
     ] = "top_3"
     metric: Literal["flow_score", "dca_score"] = "dca_score"
     start_date: date | None = None
@@ -137,7 +138,7 @@ def create_backtest(request: BacktestRequest, _operator: Operator) -> dict:
         try:
             cursor.execute(
                 """
-                select date, representative_ticker, flow_score, dca_score
+                select date, representative_ticker, flow_score, dca_score, flow_20d_pct_aum
                 from sector_daily
                 order by date
                 """
@@ -148,6 +149,11 @@ def create_backtest(request: BacktestRequest, _operator: Operator) -> dict:
                     ticker=row["representative_ticker"],
                     flow_score=float(row["flow_score"]) if row["flow_score"] is not None else None,
                     dca_score=float(row["dca_score"]) if row["dca_score"] is not None else None,
+                    flow_20d_pct_aum=(
+                        float(row["flow_20d_pct_aum"])
+                        if row["flow_20d_pct_aum"] is not None
+                        else None
+                    ),
                 )
                 for row in cursor.fetchall()
             ]

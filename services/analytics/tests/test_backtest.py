@@ -55,6 +55,20 @@ def momentum_dataset() -> tuple[list[ScoreObservation], list[PriceObservation]]:
     return scores, prices
 
 
+def flow_confirmed_dataset(
+    positive_confirmation: bool = True,
+) -> tuple[list[ScoreObservation], list[PriceObservation]]:
+    _, prices = momentum_dataset()
+    tickers = ["XLK", "XLE", "XLP", "XLU"]
+    surprises = {"XLK": 0.1, "XLE": -0.1, "XLP": 0.05, "XLU": 0.0}
+    scores = []
+    for day in trading_days(date(2024, 10, 1), date(2025, 3, 31)):
+        for ticker in tickers:
+            flow = surprises[ticker] if positive_confirmation and day.day >= 28 else 0.0
+            scores.append(ScoreObservation(day, ticker, 50, 50, flow))
+    return scores, prices
+
+
 def test_rank_uses_prior_month_end_and_executes_next_trading_day() -> None:
     scores, prices = dataset()
 
@@ -161,3 +175,21 @@ def test_spy_core_momentum_uses_momentum_for_active_sleeve() -> None:
     assert first["weights"] == pytest.approx(
         {"SPY": 0.7, "XLK": 0.1, "XLE": 0.1, "XLP": 0.1}
     )
+
+
+def test_flow_confirmation_keeps_unconfirmed_slots_in_spy() -> None:
+    scores, prices = flow_confirmed_dataset()
+
+    result = run_monthly_backtest(scores, prices, "spy_core_momentum_flow", "dca_score")
+    first = result["monthly_results"][0]
+
+    assert first["holdings"] == ["SPY", "XLK", "XLP"]
+    assert first["weights"] == pytest.approx({"SPY": 0.8, "XLK": 0.1, "XLP": 0.1})
+
+
+def test_flow_confirmation_falls_back_to_spy_when_signal_is_weak() -> None:
+    scores, prices = flow_confirmed_dataset(positive_confirmation=False)
+
+    result = run_monthly_backtest(scores, prices, "spy_core_momentum_flow", "dca_score")
+
+    assert result["monthly_results"][0]["weights"] == {"SPY": 1.0}

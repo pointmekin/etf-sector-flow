@@ -15,6 +15,7 @@ Strategy = Literal[
     "top_3_momentum",
     "spy_core_flow",
     "spy_core_momentum",
+    "spy_core_momentum_flow",
 ]
 Metric = Literal["flow_score", "dca_score"]
 WARMUP_TRADING_DAYS = 252
@@ -27,6 +28,7 @@ class ScoreObservation:
     ticker: str
     flow_score: float | None
     dca_score: float | None
+    flow_20d_pct_aum: float | None = None
 
 
 @dataclass(frozen=True)
@@ -50,7 +52,9 @@ def run_monthly_backtest(
     if execution_delay_days < 1 or execution_delay_days > 20:
         raise ValueError("Execution delay must be between 1 and 20 trading days")
     score_by_date: dict[date, list[ScoreObservation]] = defaultdict(list)
+    score_history_by_ticker: dict[str, list[ScoreObservation]] = defaultdict(list)
     for observation in scores:
+        score_history_by_ticker[observation.ticker].append(observation)
         if start_date is None or observation.date >= start_date:
             score_by_date[observation.date].append(observation)
     month_ends = _month_ends(score_by_date)
@@ -71,7 +75,12 @@ def run_monthly_backtest(
         if not execution_date or not next_execution_date:
             continue
         weights = _target_weights(
-            score_by_date[signal_date], strategy, metric, price_map, signal_date
+            score_by_date[signal_date],
+            strategy,
+            metric,
+            price_map,
+            score_history_by_ticker,
+            signal_date,
         )
         holdings = list(weights)
         missing = [
@@ -184,15 +193,22 @@ def _target_weights(
     strategy: Strategy,
     metric: Metric,
     price_map: dict[str, dict[date, float]],
+    score_history_by_ticker: dict[str, list[ScoreObservation]],
     signal_date: date,
 ) -> dict[str, float]:
-    if strategy in {"top_3_momentum", "spy_core_momentum"}:
+    if strategy in {"top_3_momentum", "spy_core_momentum", "spy_core_momentum_flow"}:
         active = _momentum_holdings(observations, price_map, signal_date)
+        if strategy == "spy_core_momentum_flow":
+            active = _flow_confirmed_holdings(active, score_history_by_ticker, signal_date)
     elif strategy == "spy_core_flow":
         active = _ranked_holdings(observations, metric, 3)
     else:
         active = _select_holdings(observations, strategy, metric)
 
+    if strategy == "spy_core_momentum_flow":
+        slot_weight = (1 - SPY_CORE_WEIGHT) / 3
+        spy_weight = 1 - slot_weight * len(active)
+        return {"SPY": spy_weight, **dict.fromkeys(active, slot_weight)}
     if strategy in {"spy_core_flow", "spy_core_momentum"}:
         active_weight = (1 - SPY_CORE_WEIGHT) / len(active)
         return {"SPY": SPY_CORE_WEIGHT, **dict.fromkeys(active, active_weight)}
@@ -234,6 +250,35 @@ def _trailing_return(prices: dict[date, float], signal_date: date) -> float:
         raise ValueError(f"Momentum requires {WARMUP_TRADING_DAYS} trading days of history")
     sample = history[-required_prices:]
     return sample[-1] / sample[0] - 1
+
+
+def _flow_confirmed_holdings(
+    candidates: list[str],
+    history_by_ticker: dict[str, list[ScoreObservation]],
+    signal_date: date,
+) -> list[str]:
+    return [
+        ticker
+        for ticker in candidates
+        if _flow_surprise(history_by_ticker[ticker], signal_date) > 0
+    ]
+
+
+def _flow_surprise(observations: list[ScoreObservation], signal_date: date) -> float:
+    values = [
+        float(item.flow_20d_pct_aum)
+        for item in sorted(observations, key=lambda item: item.date)
+        if item.date <= signal_date and item.flow_20d_pct_aum is not None
+    ]
+    if len(values) < 61:
+        return 0
+    current = values[-1]
+    baseline = values[-61:-1]
+    baseline_mean = mean(baseline)
+    deviation = pstdev(baseline)
+    if deviation:
+        return (current - baseline_mean) / deviation
+    return float((current > baseline_mean) - (current < baseline_mean))
 
 
 def _summary(periods: list[dict[str, object]]) -> dict[str, float]:
