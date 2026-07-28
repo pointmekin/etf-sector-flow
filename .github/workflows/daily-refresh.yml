@@ -1,0 +1,25 @@
+name: Daily sector-flow refresh
+
+on:
+  schedule:
+    - cron: "30 15 * * 1-5"
+  workflow_dispatch:
+
+concurrency:
+  group: daily-sector-flow-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger refresh
+        env:
+          API_URL: ${{ secrets.ANALYTICS_API_URL }}
+          API_USERNAME: ${{ secrets.JOB_BASIC_AUTH_USERNAME }}
+          API_PASSWORD: ${{ secrets.JOB_BASIC_AUTH_PASSWORD }}
+        run: |
+          curl --fail --silent --show-error \
+            --user "${API_USERNAME}:${API_PASSWORD}" \
+            --request POST \
+            "${API_URL}/api/v1/jobs/daily-refresh"

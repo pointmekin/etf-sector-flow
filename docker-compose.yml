@@ -1,0 +1,25 @@
+services:
+  analytics:
+    build:
+      context: ./services/analytics
+    restart: unless-stopped
+    env_file:
+      - ./services/analytics/.env
+    ports:
+      - "127.0.0.1:8000:8000"
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=4)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

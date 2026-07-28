@@ -16,6 +16,8 @@ def test_parse_representative_state_street_workbook(tmp_path: Path) -> None:
     sheet.append(fixture["headers"])
     for row in fixture["rows"]:
         sheet.append(row)
+    sheet.append([])
+    sheet.append(["Before investing, read the prospectus carefully."])
     path = tmp_path / "nav-history.xlsx"
     workbook.save(path)
 

@@ -8,6 +8,7 @@ __pycache__/
 *.pyc
 node_modules/
 .output/
+.vercel/
 dist/
 coverage/
 *.log

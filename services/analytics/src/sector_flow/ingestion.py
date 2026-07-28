@@ -14,9 +14,9 @@ EXPECTED_HEADERS = ("Date", "NAV", "Shares Outstanding", "Total Net Assets")
 @dataclass(frozen=True)
 class FundDailyInput:
     date: date
-    nav: Decimal
-    shares_outstanding: Decimal
-    aum: Decimal
+    nav: Decimal | None
+    shares_outstanding: Decimal | None
+    aum: Decimal | None
     source_url: str
     source_hash: str
     retrieved_at: datetime
@@ -52,22 +52,31 @@ def parse_nav_history(path: Path, source_url: str) -> list[FundDailyInput]:
     for values in sheet.iter_rows(min_row=5, max_col=4, values_only=True):
         if not values[0]:
             continue
-        parsed_date = _parse_date(values[0])
+        try:
+            parsed_date = _parse_date(values[0])
+        except ValueError:
+            if rows:
+                break
+            raise ValueError(f"Invalid source date: {values[0]}") from None
         if parsed_date in seen_dates:
             raise ValueError(f"Duplicate source date: {parsed_date}")
         seen_dates.add(parsed_date)
-        try:
-            nav, shares, aum = (Decimal(str(value)) for value in values[1:4])
-        except (InvalidOperation, TypeError) as error:
-            raise ValueError(f"Invalid numeric values for {parsed_date}") from error
-        if min(nav, shares, aum) < 0:
+        nav, shares, aum = (_decimal_or_none(value) for value in values[1:4])
+        numeric_values = [value for value in (nav, shares, aum) if value is not None]
+        if any(value < 0 for value in numeric_values):
             raise ValueError(f"Negative source value for {parsed_date}")
 
-        mismatch = abs(aum - nav * shares) / aum if aum else Decimal(0)
-        quality_status = "review" if mismatch > Decimal("0.02") else "ok"
-        quality_note = (
-            "AUM differs from NAV × shares by more than 2%" if quality_status == "review" else None
-        )
+        if nav is None or shares is None or aum is None:
+            quality_status = "unavailable"
+            quality_note = "NAV, shares, or AUM is unavailable in the source"
+        else:
+            mismatch = abs(aum - nav * shares) / aum if aum else Decimal(0)
+            quality_status = "review" if mismatch > Decimal("0.02") else "ok"
+            quality_note = (
+                "AUM differs from NAV × shares by more than 2%"
+                if quality_status == "review"
+                else None
+            )
         rows.append(
             FundDailyInput(
                 date=parsed_date,
@@ -121,3 +130,12 @@ def _parse_date(value: object) -> date:
     if isinstance(value, date):
         return value
     return datetime.strptime(str(value), "%d-%b-%Y").date()
+
+
+def _decimal_or_none(value: object) -> Decimal | None:
+    if value in (None, "", "-"):
+        return None
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, TypeError) as error:
+        raise ValueError(f"Invalid numeric value: {value}") from error

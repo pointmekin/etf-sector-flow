@@ -37,15 +37,18 @@ Keep task tracking lightweight. Do not create separate project-management infras
 
 ## 1. Current Status
 
-**Overall status:** Implementation in progress  
-**Current milestone:** M4 — deployment and release  
-**Production readiness:** Not started  
+**Overall status:** Code complete; owner setup pending
+
+**Current milestone:** M4 — production activation
+
+**Production readiness:** Deployment artifacts verified; accounts, secrets, DNS, backfill, and smoke test pending
 
 ### Immediate next actions
 
-- Configure a Neon database and verify the local connection.
-- Configure `DATABASE_URL` and `TWELVE_DATA_API_KEY`, migrate, and run the XLK/full refresh.
-- Add CI, container, VPS deployment, scheduling, and release documentation.
+- Complete the owner checklist in `SETUP.md`.
+- Migrate Neon and run the initial historical refresh.
+- Deploy the analytics container to the VPS and the web app to Vercel.
+- Run the production smoke test and manually verify sample flow/backtest periods.
 - Implement one complete vertical slice using XLK before processing the full ETF universe.
 - Provision the selected VPS deployment target before the production milestone.
 
@@ -1232,18 +1235,18 @@ Keep this section updated throughout implementation.
 
 ### M4 — Deployment and release
 
-- [ ] M4-01 Create the CI workflow using Bun and `uv`.
-- [ ] M4-02 Create the production FastAPI Dockerfile.
-- [ ] M4-03 Create `docker-compose.yml` with memory and log limits.
-- [ ] M4-04 Adapt the attached SSH deployment workflow for this repository.
-- [ ] M4-05 Configure VPS HTTPS and reverse proxy if VPS is selected.
-- [ ] M4-06 Alternatively configure the Google Cloud Run service and disable VPS deployment.
-- [ ] M4-07 Configure Vercel and production environment variables.
-- [ ] M4-08 Add the GitHub Actions daily-refresh workflow.
-- [ ] M4-09 Verify that Docker logs remain capped and old images are pruned.
-- [ ] M4-10 Run historical backfill.
-- [ ] M4-11 Perform a production smoke test.
-- [ ] M4-12 Publish the methodology and limitations.
+- [x] M4-01 Create the CI workflow using Bun and `uv`.
+- [x] M4-02 Create the production FastAPI Dockerfile.
+- [x] M4-03 Create and validate `docker-compose.yml` with 512 MB memory, loopback port, health, and 30 MB log limits.
+- [x] M4-04 Add the VPS SSH deployment workflow with health check and bounded image/cache pruning.
+- [ ] M4-05 Configure VPS HTTPS and reverse proxy (BLOCKED — requires VPS and API domain; Caddy example provided).
+- [x] M4-06 Exclude Cloud Run because VPS is the selected single target.
+- [ ] M4-07 Configure Vercel and production environment variables (BLOCKED — requires Vercel project and secrets).
+- [x] M4-08 Add the GitHub Actions daily-refresh workflow.
+- [ ] M4-09 Verify deployed Docker log growth and pruning (BLOCKED — Compose limits validated locally; requires running VPS).
+- [ ] M4-10 Run historical backfill (BLOCKED — requires Neon and Twelve Data credentials).
+- [ ] M4-11 Perform a production smoke test (BLOCKED — requires deployed domains).
+- [x] M4-12 Publish the methodology and limitations.
 
 **M4 acceptance:** The website is public, the daily job runs, API logs are bounded on disk, and the full system can be operated by one maintainer.
 
@@ -1274,11 +1277,11 @@ The MVP is done when:
 
 Resolve these only when they block implementation:
 
-- [ ] Which adjusted-price source will be used for ETF and SPY backtests?
-- [ ] Will the initial Python deployment target be the VPS or Google Cloud Run?
+- [x] Use Twelve Data `time_series` with `adjust=all` for ETF and SPY backtests.
+- [x] Use the VPS as the initial Python deployment target.
 - [ ] What public domain names will be used for the web app and API?
 - [ ] Is State Street data usage acceptable for the intended public presentation of derived metrics?
-- [ ] What minimum historical date is available consistently for all 11 ETFs?
+- [x] The common source-data start date is 2018-06-18, limited by XLC.
 
 Do not introduce additional architecture work merely to keep both deployment options active.
 
@@ -1298,6 +1301,7 @@ The following are intentionally outside the MVP:
 - Cloudflare deployment.
 - Intraday ingestion.
 - Multiple ETF issuers per sector.
+- Google Cloud Run deployment (VPS selected as the single initial target).
 - Automated trading.
 - Complicated admin dashboards.
 - Multi-region or highly available deployment.
@@ -1316,4 +1320,5 @@ Add one concise entry after each meaningful implementation session.
 2026-07-28 — Added the six-table Drizzle migration, fund seeding, streaming State Street/Twelve Data ingestion, flow and split calculations, rolling scores/states/ranks, notifications, and an idempotent daily job; eight analytics tests pass. Live database validation remains credential-blocked.
 2026-07-28 — Built the editorial public dashboard, ranking table with rank change, horizon heatmap, signals, shareable sector histories, fixed charts, methodology, responsive states, and metadata; verified typecheck, lint, render smoke test, production build, and desktop/compact browser layouts.
 2026-07-28 — Added public data routes, constant-time Basic Auth for operational routes, synchronous persisted monthly backtests, baseline/SPY comparisons, transaction costs, a server-mediated backtest UI, and seven new auth/backtest tests; confirmed server credentials do not appear in the client bundle.
+2026-07-28 — Added Nitro/Vercel output, FastAPI container/Compose, CI, VPS deploy, daily schedule, Caddy example, and the owner setup checklist. Validated Compose memory/log/port settings and all 11 live workbook shapes; fixed disclosure/footer parsing and unavailable pre-2006 values. Docker Hub did not complete the base-image pull locally, so the image build remains a production/setup verification item.
 ```

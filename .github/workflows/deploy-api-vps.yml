@@ -1,0 +1,50 @@
+name: Deploy analytics API to VPS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/analytics/**"
+      - "docker-compose.yml"
+      - ".github/workflows/deploy-api-vps.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-analytics-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy through SSH
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_SSH_KEY_PASSPHRASE }}
+          script_stop: true
+          script: |
+            set -e
+            cd ~/projects/etf-sector-flow
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
+            docker compose build analytics
+            docker compose up -d --remove-orphans analytics
+
+            timeout=45
+            elapsed=0
+            until curl --fail --silent http://localhost:8000/health > /dev/null; do
+              if [ "$elapsed" -ge "$timeout" ]; then
+                docker compose logs --tail=200 analytics
+                exit 1
+              fi
+              sleep 2
+              elapsed=$((elapsed + 2))
+            done
+
+            docker compose logs --tail=100 analytics
+            docker image prune -f
+            docker builder prune -f --filter "until=168h"

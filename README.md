@@ -22,3 +22,6 @@ cd services/analytics && uv run uvicorn sector_flow.api:app --reload
 
 See [the implementation plan](./etf-sector-flow-implementation-plan.md) for scope,
 architecture, and current progress.
+
+Production accounts, credentials, DNS, deployment, and first-run steps are listed
+in [SETUP.md](./SETUP.md).
