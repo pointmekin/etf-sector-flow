@@ -37,6 +37,24 @@ def trading_days(start: date, end: date) -> list[date]:
     return days
 
 
+def momentum_dataset() -> tuple[list[ScoreObservation], list[PriceObservation]]:
+    signal_dates = [date(2025, 1, 31), date(2025, 2, 28), date(2025, 3, 31)]
+    score_values = {"XLK": 10, "XLE": 60, "XLP": 80, "XLU": 100}
+    scores = [
+        ScoreObservation(day, ticker, score, score)
+        for day in signal_dates
+        for ticker, score in score_values.items()
+    ]
+    days = trading_days(date(2024, 1, 1), date(2025, 4, 4))
+    ending_values = {"XLK": 200, "XLE": 160, "XLP": 130, "XLU": 110, "SPY": 125}
+    prices = [
+        PriceObservation(day, ticker, 100 + (ending - 100) * index / (len(days) - 1))
+        for ticker, ending in ending_values.items()
+        for index, day in enumerate(days)
+    ]
+    return scores, prices
+
+
 def test_rank_uses_prior_month_end_and_executes_next_trading_day() -> None:
     scores, prices = dataset()
 
@@ -108,3 +126,38 @@ def test_summary_reports_spy_and_benchmark_relative_risk() -> None:
     assert summary["excess_cagr"] == pytest.approx(summary["cagr"] - summary["benchmark_cagr"])
     assert summary["tracking_error"] >= 0
     assert "information_ratio" in summary
+
+
+def test_momentum_strategy_selects_top_three_trailing_returns() -> None:
+    scores, prices = momentum_dataset()
+
+    result = run_monthly_backtest(scores, prices, "top_3_momentum", "dca_score")
+
+    assert result["monthly_results"][0]["holdings"] == ["XLK", "XLE", "XLP"]
+    assert result["monthly_results"][0]["weights"] == pytest.approx(
+        {"XLK": 1 / 3, "XLE": 1 / 3, "XLP": 1 / 3}
+    )
+
+
+def test_spy_core_flow_keeps_seventy_percent_in_benchmark() -> None:
+    scores, prices = momentum_dataset()
+
+    result = run_monthly_backtest(scores, prices, "spy_core_flow", "dca_score")
+    first = result["monthly_results"][0]
+
+    assert first["holdings"] == ["SPY", "XLU", "XLP", "XLE"]
+    assert first["weights"] == pytest.approx(
+        {"SPY": 0.7, "XLU": 0.1, "XLP": 0.1, "XLE": 0.1}
+    )
+
+
+def test_spy_core_momentum_uses_momentum_for_active_sleeve() -> None:
+    scores, prices = momentum_dataset()
+
+    result = run_monthly_backtest(scores, prices, "spy_core_momentum", "flow_score")
+    first = result["monthly_results"][0]
+
+    assert first["holdings"] == ["SPY", "XLK", "XLE", "XLP"]
+    assert first["weights"] == pytest.approx(
+        {"SPY": 0.7, "XLK": 0.1, "XLE": 0.1, "XLP": 0.1}
+    )

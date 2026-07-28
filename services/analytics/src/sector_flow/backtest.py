@@ -7,9 +7,18 @@ from typing import Literal
 
 import numpy as np
 
-Strategy = Literal["top_1", "top_2", "top_3", "equal_weight"]
+Strategy = Literal[
+    "top_1",
+    "top_2",
+    "top_3",
+    "equal_weight",
+    "top_3_momentum",
+    "spy_core_flow",
+    "spy_core_momentum",
+]
 Metric = Literal["flow_score", "dca_score"]
 WARMUP_TRADING_DAYS = 252
+SPY_CORE_WEIGHT = 0.7
 
 
 @dataclass(frozen=True)
@@ -61,11 +70,13 @@ def run_monthly_backtest(
         next_execution_date = _date_after(common_dates, next_signal_date, execution_delay_days)
         if not execution_date or not next_execution_date:
             continue
-        holdings = _select_holdings(score_by_date[signal_date], strategy, metric)
-        weights = {ticker: 1 / len(holdings) for ticker in holdings}
+        weights = _target_weights(
+            score_by_date[signal_date], strategy, metric, price_map, signal_date
+        )
+        holdings = list(weights)
         missing = [
             ticker
-            for ticker in holdings + ["SPY"]
+            for ticker in set(holdings) | {"SPY"}
             if execution_date not in price_map.get(ticker, {})
             or next_execution_date not in price_map.get(ticker, {})
         ]
@@ -138,8 +149,9 @@ def _date_after(dates: list[date], signal_date: date, trading_days: int) -> date
 def _has_warmup(
     price_map: dict[str, dict[date, float]], tickers: list[str], signal_date: date
 ) -> bool:
+    required_prices = WARMUP_TRADING_DAYS + 1
     return all(
-        sum(day <= signal_date for day in price_map.get(ticker, {})) >= WARMUP_TRADING_DAYS
+        sum(day <= signal_date for day in price_map.get(ticker, {})) >= required_prices
         for ticker in tickers
     )
 
@@ -165,6 +177,63 @@ def _select_holdings(
     if not holdings:
         raise ValueError("No complete sector scores are available for a rebalance")
     return holdings
+
+
+def _target_weights(
+    observations: list[ScoreObservation],
+    strategy: Strategy,
+    metric: Metric,
+    price_map: dict[str, dict[date, float]],
+    signal_date: date,
+) -> dict[str, float]:
+    if strategy in {"top_3_momentum", "spy_core_momentum"}:
+        active = _momentum_holdings(observations, price_map, signal_date)
+    elif strategy == "spy_core_flow":
+        active = _ranked_holdings(observations, metric, 3)
+    else:
+        active = _select_holdings(observations, strategy, metric)
+
+    if strategy in {"spy_core_flow", "spy_core_momentum"}:
+        active_weight = (1 - SPY_CORE_WEIGHT) / len(active)
+        return {"SPY": SPY_CORE_WEIGHT, **dict.fromkeys(active, active_weight)}
+    return dict.fromkeys(active, 1 / len(active))
+
+
+def _ranked_holdings(
+    observations: list[ScoreObservation], metric: Metric, count: int
+) -> list[str]:
+    available = [item for item in observations if getattr(item, metric) is not None]
+    if len(available) != len(observations):
+        raise ValueError("Missing sector score at rebalance")
+    return [
+        item.ticker
+        for item in sorted(
+            available,
+            key=lambda item: float(getattr(item, metric) or 0),
+            reverse=True,
+        )[:count]
+    ]
+
+
+def _momentum_holdings(
+    observations: list[ScoreObservation],
+    price_map: dict[str, dict[date, float]],
+    signal_date: date,
+) -> list[str]:
+    returns = {
+        item.ticker: _trailing_return(price_map[item.ticker], signal_date)
+        for item in observations
+    }
+    return sorted(returns, key=returns.get, reverse=True)[:3]  # type: ignore[arg-type]
+
+
+def _trailing_return(prices: dict[date, float], signal_date: date) -> float:
+    history = [price for day, price in sorted(prices.items()) if day <= signal_date]
+    required_prices = WARMUP_TRADING_DAYS + 1
+    if len(history) < required_prices:
+        raise ValueError(f"Momentum requires {WARMUP_TRADING_DAYS} trading days of history")
+    sample = history[-required_prices:]
+    return sample[-1] / sample[0] - 1
 
 
 def _summary(periods: list[dict[str, object]]) -> dict[str, float]:

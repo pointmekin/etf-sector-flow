@@ -1257,9 +1257,9 @@ Keep this section updated throughout implementation.
 
 - [x] M5-01 Enforce a 252-trading-day backtest warm-up and configurable execution lag.
 - [x] M5-02 Report complete SPY, excess-return, tracking-error, and information-ratio metrics.
-- [ ] M5-03 Add a monthly top-three trailing-12-month sector-momentum strategy. (IN PROGRESS — 2026-07-28)
-- [ ] M5-04 Add SPY-core variants for flow-ranked and momentum-ranked active sleeves.
-- [ ] M5-05 Add standardized flow-surprise confirmation and confidence gating.
+- [x] M5-03 Add a monthly top-three trailing-12-month sector-momentum strategy.
+- [x] M5-04 Add SPY-core variants for flow-ranked and momentum-ranked active sleeves.
+- [ ] M5-05 Add standardized flow-surprise confirmation and confidence gating. (IN PROGRESS — 2026-07-28)
 - [ ] M5-06 Expose the new strategies, assumptions, and metrics in the web application.
 - [ ] M5-07 Add unit and integration coverage for timing, selection, weights, and reporting.
 

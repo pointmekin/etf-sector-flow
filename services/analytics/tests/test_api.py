@@ -22,3 +22,10 @@ def test_backtest_request_defaults_to_next_day_execution() -> None:
 def test_backtest_request_rejects_same_day_execution() -> None:
     with pytest.raises(ValidationError):
         BacktestRequest(execution_delay_days=0)
+
+
+@pytest.mark.parametrize(
+    "strategy", ["top_3_momentum", "spy_core_flow", "spy_core_momentum"]
+)
+def test_backtest_request_accepts_benchmark_aware_strategies(strategy: str) -> None:
+    assert BacktestRequest(strategy=strategy).strategy == strategy

@@ -26,7 +26,15 @@ Operator = Annotated[str, Depends(require_basic_auth)]
 
 
 class BacktestRequest(BaseModel):
-    strategy: Literal["top_1", "top_2", "top_3", "equal_weight"] = "top_3"
+    strategy: Literal[
+        "top_1",
+        "top_2",
+        "top_3",
+        "equal_weight",
+        "top_3_momentum",
+        "spy_core_flow",
+        "spy_core_momentum",
+    ] = "top_3"
     metric: Literal["flow_score", "dca_score"] = "dca_score"
     start_date: date | None = None
     transaction_cost_bps: float = Field(default=0, ge=0, le=1000)
