@@ -37,14 +37,17 @@ Keep task tracking lightweight. Do not create separate project-management infras
 
 ## 1. Current Status
 
-**Overall status:** Code complete; owner setup pending
+**Overall status:** Strategy improvements in progress; owner setup pending
 
-**Current milestone:** M4 — production activation
+**Current milestone:** M5 — benchmark-aware strategy research
 
 **Production readiness:** Deployment artifacts verified; accounts, secrets, DNS, backfill, and smoke test pending
 
 ### Immediate next actions
 
+- Correct backtest warm-up, execution-lag, and benchmark-relative reporting.
+- Add simple sector-momentum and SPY-core strategy candidates.
+- Add standardized flow confirmation without expanding the data architecture.
 - Complete the owner checklist in `SETUP.md`.
 - Migrate Neon and run the initial historical refresh.
 - Deploy the analytics container to the VPS and the web app to Vercel.
@@ -1250,6 +1253,18 @@ Keep this section updated throughout implementation.
 
 **M4 acceptance:** The website is public, the daily job runs, API logs are bounded on disk, and the full system can be operated by one maintainer.
 
+### M5 — Benchmark-aware strategy research
+
+- [x] M5-01 Enforce a 252-trading-day backtest warm-up and configurable execution lag.
+- [x] M5-02 Report complete SPY, excess-return, tracking-error, and information-ratio metrics.
+- [ ] M5-03 Add a monthly top-three trailing-12-month sector-momentum strategy. (IN PROGRESS — 2026-07-28)
+- [ ] M5-04 Add SPY-core variants for flow-ranked and momentum-ranked active sleeves.
+- [ ] M5-05 Add standardized flow-surprise confirmation and confidence gating.
+- [ ] M5-06 Expose the new strategies, assumptions, and metrics in the web application.
+- [ ] M5-07 Add unit and integration coverage for timing, selection, weights, and reporting.
+
+**M5 acceptance:** The strategy lab can compare flow and momentum challengers against SPY using explicit timing assumptions and benchmark-relative risk metrics.
+
 ---
 
 ## 19. Definition of Done
@@ -1321,4 +1336,5 @@ Add one concise entry after each meaningful implementation session.
 2026-07-28 — Built the editorial public dashboard, ranking table with rank change, horizon heatmap, signals, shareable sector histories, fixed charts, methodology, responsive states, and metadata; verified typecheck, lint, render smoke test, production build, and desktop/compact browser layouts.
 2026-07-28 — Added public data routes, constant-time Basic Auth for operational routes, synchronous persisted monthly backtests, baseline/SPY comparisons, transaction costs, a server-mediated backtest UI, and seven new auth/backtest tests; confirmed server credentials do not appear in the client bundle.
 2026-07-28 — Added Nitro/Vercel output, FastAPI container/Compose, CI, VPS deploy, daily schedule, Caddy example, and the owner setup checklist. Validated Compose memory/log/port settings and all 11 live workbook shapes; fixed disclosure/footer parsing and unavailable pre-2006 values. Docker Hub did not complete the base-image pull locally, so the image build remains a production/setup verification item.
+2026-07-28 — Began M5 strategy research implementation: enforced a 252-trading-day warm-up, added configurable execution delay, retained pre-start-date history, and added complete SPY-relative performance and risk metrics with tests.
 ```

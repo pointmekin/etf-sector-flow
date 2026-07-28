@@ -30,6 +30,7 @@ class BacktestRequest(BaseModel):
     metric: Literal["flow_score", "dca_score"] = "dca_score"
     start_date: date | None = None
     transaction_cost_bps: float = Field(default=0, ge=0, le=1000)
+    execution_delay_days: int = Field(default=1, ge=1, le=20)
 
 
 @app.get("/health")
@@ -130,10 +131,8 @@ def create_backtest(request: BacktestRequest, _operator: Operator) -> dict:
                 """
                 select date, representative_ticker, flow_score, dca_score
                 from sector_daily
-                where (%s::date is null or date >= %s::date)
                 order by date
-                """,
-                (request.start_date, request.start_date),
+                """
             )
             scores = [
                 ScoreObservation(
@@ -147,10 +146,9 @@ def create_backtest(request: BacktestRequest, _operator: Operator) -> dict:
             cursor.execute(
                 """
                 select ticker, date, close_price from fund_daily
-                where close_price is not null and (%s::date is null or date >= %s::date)
+                where close_price is not null
                 order by date
-                """,
-                (request.start_date, request.start_date),
+                """
             )
             prices = [
                 PriceObservation(row["date"], row["ticker"], float(row["close_price"]))
@@ -159,10 +157,11 @@ def create_backtest(request: BacktestRequest, _operator: Operator) -> dict:
             result = run_monthly_backtest(
                 scores,
                 prices,
-                request.strategy,
-                request.metric,
-                request.transaction_cost_bps,
-                request.start_date,
+                strategy=request.strategy,
+                metric=request.metric,
+                transaction_cost_bps=request.transaction_cost_bps,
+                start_date=request.start_date,
+                execution_delay_days=request.execution_delay_days,
             )
             cursor.execute(
                 """

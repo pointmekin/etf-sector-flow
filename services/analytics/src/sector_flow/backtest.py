@@ -9,6 +9,7 @@ import numpy as np
 
 Strategy = Literal["top_1", "top_2", "top_3", "equal_weight"]
 Metric = Literal["flow_score", "dca_score"]
+WARMUP_TRADING_DAYS = 252
 
 
 @dataclass(frozen=True)
@@ -33,9 +34,12 @@ def run_monthly_backtest(
     metric: Metric,
     transaction_cost_bps: float = 0,
     start_date: date | None = None,
+    execution_delay_days: int = 1,
 ) -> dict[str, object]:
     if transaction_cost_bps < 0 or transaction_cost_bps > 1000:
         raise ValueError("Transaction costs must be between 0 and 1000 bps")
+    if execution_delay_days < 1 or execution_delay_days > 20:
+        raise ValueError("Execution delay must be between 1 and 20 trading days")
     score_by_date: dict[date, list[ScoreObservation]] = defaultdict(list)
     for observation in scores:
         if start_date is None or observation.date >= start_date:
@@ -50,8 +54,11 @@ def run_monthly_backtest(
     benchmark_equity = 1.0
     previous_weights: dict[str, float] = {}
     for signal_date, next_signal_date in zip(month_ends, month_ends[1:], strict=False):
-        execution_date = _next_date(common_dates, signal_date)
-        next_execution_date = _next_date(common_dates, next_signal_date)
+        signal_tickers = [item.ticker for item in score_by_date[signal_date]] + ["SPY"]
+        if not _has_warmup(price_map, signal_tickers, signal_date):
+            continue
+        execution_date = _date_after(common_dates, signal_date, execution_delay_days)
+        next_execution_date = _date_after(common_dates, next_signal_date, execution_delay_days)
         if not execution_date or not next_execution_date:
             continue
         holdings = _select_holdings(score_by_date[signal_date], strategy, metric)
@@ -96,7 +103,9 @@ def run_monthly_backtest(
         )
         previous_weights = weights
     if not periods:
-        raise ValueError("No executable monthly periods were found")
+        raise ValueError(
+            f"No executable monthly periods were found after the {WARMUP_TRADING_DAYS}-day warm-up"
+        )
     return {"summary": _summary(periods), "monthly_results": periods}
 
 
@@ -120,8 +129,19 @@ def _price_data(
     return dict(price_map), benchmark_dates
 
 
-def _next_date(dates: list[date], signal_date: date) -> date | None:
-    return next((candidate for candidate in dates if candidate > signal_date), None)
+def _date_after(dates: list[date], signal_date: date, trading_days: int) -> date | None:
+    candidates = [candidate for candidate in dates if candidate > signal_date]
+    index = trading_days - 1
+    return candidates[index] if len(candidates) > index else None
+
+
+def _has_warmup(
+    price_map: dict[str, dict[date, float]], tickers: list[str], signal_date: date
+) -> bool:
+    return all(
+        sum(day <= signal_date for day in price_map.get(ticker, {})) >= WARMUP_TRADING_DAYS
+        for ticker in tickers
+    )
 
 
 def _select_holdings(
@@ -150,14 +170,46 @@ def _select_holdings(
 def _summary(periods: list[dict[str, object]]) -> dict[str, float]:
     returns = [float(period["return"]) for period in periods]
     benchmark_returns = [float(period["benchmark_return"]) for period in periods]
+    strategy = _performance_metrics(
+        returns, [float(period["equity"]) for period in periods]
+    )
+    benchmark = _performance_metrics(
+        benchmark_returns, [float(period["benchmark_equity"]) for period in periods]
+    )
+    active_returns = [
+        value - benchmark
+        for value, benchmark in zip(returns, benchmark_returns, strict=True)
+    ]
+    tracking_error = pstdev(active_returns) * sqrt(12) if len(active_returns) > 1 else 0
+    return {
+        **strategy,
+        "benchmark_cagr": benchmark["cagr"],
+        "benchmark_maximum_drawdown": benchmark["maximum_drawdown"],
+        "benchmark_annualized_volatility": benchmark["annualized_volatility"],
+        "benchmark_sharpe_ratio": benchmark["sharpe_ratio"],
+        "benchmark_sortino_ratio": benchmark["sortino_ratio"],
+        "benchmark_worst_12_month_return": benchmark["worst_12_month_return"],
+        "excess_cagr": strategy["cagr"] - benchmark["cagr"],
+        "tracking_error": tracking_error,
+        "information_ratio": mean(active_returns) * 12 / tracking_error if tracking_error else 0,
+        "turnover": mean(float(period["turnover"]) for period in periods),
+        "months_outperforming_spy": mean(
+            value > benchmark for value, benchmark in zip(returns, benchmark_returns, strict=True)
+        ),
+        "final_equity": strategy["final_equity"],
+        "benchmark_final_equity": float(periods[-1]["benchmark_equity"]),
+    }
+
+
+def _performance_metrics(returns: list[float], equities: list[float]) -> dict[str, float]:
     years = len(returns) / 12
-    final_equity = float(periods[-1]["equity"])
+    final_equity = equities[-1]
     cagr = final_equity ** (1 / years) - 1 if years else 0
     volatility = pstdev(returns) * sqrt(12) if len(returns) > 1 else 0
     downside = [min(value, 0) for value in returns]
     downside_deviation = sqrt(mean(value**2 for value in downside)) * sqrt(12)
     annual_return = mean(returns) * 12
-    equity_curve = [1.0] + [float(period["equity"]) for period in periods]
+    equity_curve = [1.0, *equities]
     running_max = np.maximum.accumulate(equity_curve)
     drawdowns = np.array(equity_curve) / running_max - 1
     rolling_12 = [
@@ -171,10 +223,5 @@ def _summary(periods: list[dict[str, object]]) -> dict[str, float]:
         "sharpe_ratio": annual_return / volatility if volatility else 0,
         "sortino_ratio": annual_return / downside_deviation if downside_deviation else 0,
         "worst_12_month_return": min(rolling_12) if rolling_12 else min(returns),
-        "turnover": mean(float(period["turnover"]) for period in periods),
-        "months_outperforming_spy": mean(
-            value > benchmark for value, benchmark in zip(returns, benchmark_returns, strict=True)
-        ),
         "final_equity": final_equity,
-        "benchmark_final_equity": float(periods[-1]["benchmark_equity"]),
     }

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -14,15 +14,27 @@ def dataset() -> tuple[list[ScoreObservation], list[PriceObservation]]:
         ScoreObservation(date(2025, 3, 31), "XLK", 80, 80),
         ScoreObservation(date(2025, 3, 31), "XLE", 20, 20),
     ]
-    prices = []
-    values = {
-        "XLK": [(date(2025, 2, 3), 100), (date(2025, 3, 3), 120), (date(2025, 4, 1), 132)],
-        "XLE": [(date(2025, 2, 3), 100), (date(2025, 3, 3), 90), (date(2025, 4, 1), 99)],
-        "SPY": [(date(2025, 2, 3), 100), (date(2025, 3, 3), 105), (date(2025, 4, 1), 110)],
+    overrides = {
+        "XLK": {date(2025, 2, 3): 100, date(2025, 3, 3): 120, date(2025, 4, 1): 132},
+        "XLE": {date(2025, 2, 3): 100, date(2025, 3, 3): 90, date(2025, 4, 1): 99},
+        "SPY": {date(2025, 2, 3): 100, date(2025, 3, 3): 105, date(2025, 4, 1): 110},
     }
-    for ticker, observations in values.items():
-        prices.extend(PriceObservation(day, ticker, value) for day, value in observations)
+    prices = [
+        PriceObservation(day, ticker, overrides[ticker].get(day, 100))
+        for ticker in overrides
+        for day in trading_days(date(2024, 1, 1), date(2025, 4, 1))
+    ]
     return scores, prices
+
+
+def trading_days(start: date, end: date) -> list[date]:
+    days: list[date] = []
+    current = start
+    while current <= end:
+        if current.weekday() < 5:
+            days.append(current)
+        current += timedelta(days=1)
+    return days
 
 
 def test_rank_uses_prior_month_end_and_executes_next_trading_day() -> None:
@@ -61,3 +73,38 @@ def test_missing_aligned_price_is_rejected() -> None:
 
     with pytest.raises(ValueError, match="aligned"):
         run_monthly_backtest(scores, prices, "top_1", "dca_score")
+
+
+def test_requires_a_full_trading_year_before_first_signal() -> None:
+    scores, prices = dataset()
+    prices = [price for price in prices if price.date >= date(2024, 6, 1)]
+
+    with pytest.raises(ValueError, match="warm-up"):
+        run_monthly_backtest(scores, prices, "top_1", "dca_score")
+
+
+def test_execution_delay_counts_trading_days_after_signal() -> None:
+    scores, prices = dataset()
+
+    result = run_monthly_backtest(
+        scores,
+        prices,
+        "top_1",
+        "dca_score",
+        execution_delay_days=3,
+    )
+
+    assert result["monthly_results"][0]["execution_date"] == "2025-02-05"
+
+
+def test_summary_reports_spy_and_benchmark_relative_risk() -> None:
+    scores, prices = dataset()
+
+    summary = run_monthly_backtest(scores, prices, "top_1", "dca_score")["summary"]
+
+    assert summary["benchmark_cagr"] > 0
+    assert summary["benchmark_maximum_drawdown"] <= 0
+    assert summary["benchmark_annualized_volatility"] >= 0
+    assert summary["excess_cagr"] == pytest.approx(summary["cagr"] - summary["benchmark_cagr"])
+    assert summary["tracking_error"] >= 0
+    assert "information_ratio" in summary
