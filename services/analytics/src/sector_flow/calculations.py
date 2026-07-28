@@ -132,6 +132,7 @@ def _rolling_metric(
         "date": row.date,
         "representative_ticker": ticker,
         "flow_1d_usd": row.flow_usd,
+        "flow_1d_pct_aum": row.flow_pct_aum,
     }
     for window in (5, 20, 60, 252):
         sample = rows[max(0, index - window + 1) : index + 1]

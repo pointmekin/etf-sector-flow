@@ -63,6 +63,7 @@ export const sectorDaily = pgTable(
     flow20dUsd: numeric('flow_20d_usd'),
     flow60dUsd: numeric('flow_60d_usd'),
     flow252dUsd: numeric('flow_252d_usd'),
+    flow1dPctAum: numeric('flow_1d_pct_aum'),
     flow5dPctAum: numeric('flow_5d_pct_aum'),
     flow20dPctAum: numeric('flow_20d_pct_aum'),
     flow60dPctAum: numeric('flow_60d_pct_aum'),

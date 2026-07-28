@@ -1,0 +1,1 @@
+ALTER TABLE "sector_daily" ADD COLUMN "flow_1d_pct_aum" numeric;

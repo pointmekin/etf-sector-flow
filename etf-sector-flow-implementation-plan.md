@@ -38,14 +38,14 @@ Keep task tracking lightweight. Do not create separate project-management infras
 ## 1. Current Status
 
 **Overall status:** Implementation in progress  
-**Current milestone:** M2 — public website  
+**Current milestone:** M3 — API and backtesting  
 **Production readiness:** Not started  
 
 ### Immediate next actions
 
 - Configure a Neon database and verify the local connection.
 - Configure `DATABASE_URL` and `TWELVE_DATA_API_KEY`, migrate, and run the XLK/full refresh.
-- Implement the public dashboard and detail routes against the calculated database rows.
+- Implement the public/protected API and look-ahead-safe monthly backtests.
 - Implement one complete vertical slice using XLK before processing the full ETF universe.
 - Provision the selected VPS deployment target before the production milestone.
 
@@ -1202,16 +1202,16 @@ Keep this section updated throughout implementation.
 
 ### M2 — Public website
 
-- [ ] M2-01 Implement the public dashboard server loader.
-- [ ] M2-02 Build the ranking table.
-- [ ] M2-03 Build the flow heatmap.
-- [ ] M2-04 Build the dashboard notification cards.
-- [ ] M2-05 Build sector-detail routes and charts.
-- [ ] M2-06 Add URL-shareable period and metric query parameters where useful.
-- [ ] M2-07 Build the methodology page.
-- [ ] M2-08 Add loading, empty, stale-data, and error states.
-- [ ] M2-09 Verify responsive mobile and desktop layouts.
-- [ ] M2-10 Add basic SEO and social metadata for shareable pages.
+- [x] M2-01 Implement the public dashboard server loader.
+- [x] M2-02 Build the ranking table.
+- [x] M2-03 Build the flow heatmap.
+- [x] M2-04 Build the dashboard notification cards.
+- [x] M2-05 Build sector-detail routes and fixed useful charts.
+- [x] M2-06 Add URL-shareable period and metric query parameters.
+- [x] M2-07 Build the methodology page.
+- [x] M2-08 Add loading, empty, stale-job, error, and not-found states.
+- [x] M2-09 Verify responsive 1440px desktop and 500px compact layouts in headless Chrome.
+- [x] M2-10 Add basic SEO and social metadata for shareable pages.
 
 **M2 acceptance:** Anyone with the URL can inspect current and historical flows without signing in.
 
@@ -1314,4 +1314,5 @@ Add one concise entry after each meaningful implementation session.
 2026-07-28 — Replaced the original over-engineered plan with a minimal architecture using Bun, TanStack Start, Neon, one FastAPI service, Vercel, GitHub Actions, and a VPS-or-Cloud-Run deployment choice.
 2026-07-28 — Initialized Git and the Bun monorepo; scaffolded TanStack Start, Tailwind/shadcn, FastAPI, and Drizzle; validated the four required NAV-history columns across all 11 State Street files; selected Twelve Data adjusted prices and VPS deployment.
 2026-07-28 — Added the six-table Drizzle migration, fund seeding, streaming State Street/Twelve Data ingestion, flow and split calculations, rolling scores/states/ranks, notifications, and an idempotent daily job; eight analytics tests pass. Live database validation remains credential-blocked.
+2026-07-28 — Built the editorial public dashboard, ranking table with rank change, horizon heatmap, signals, shareable sector histories, fixed charts, methodology, responsive states, and metadata; verified typecheck, lint, render smoke test, production build, and desktop/compact browser layouts.
 ```

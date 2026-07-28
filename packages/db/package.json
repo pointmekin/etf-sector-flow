@@ -8,7 +8,7 @@
     "migrate": "drizzle-kit migrate",
     "lint": "biome lint .",
     "typecheck": "tsc --noEmit",
-    "test": "bun test",
+    "test": "bun test --pass-with-no-tests",
     "build": "tsc --noEmit"
   },
   "dependencies": {
@@ -16,7 +16,7 @@
     "drizzle-orm": "^0.44.7"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.5",
+    "@biomejs/biome": "2.4.5",
     "@types/node": "^22.10.2",
     "drizzle-kit": "^0.31.8",
     "typescript": "^5.7.3"

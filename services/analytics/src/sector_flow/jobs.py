@@ -46,14 +46,14 @@ SECTOR_DAILY_UPSERT_SQL = """
 insert into sector_daily (
   sector, date, representative_ticker, flow_1d_usd, flow_5d_usd, flow_20d_usd,
   flow_60d_usd, flow_252d_usd, flow_5d_pct_aum, flow_20d_pct_aum,
-  flow_60d_pct_aum, flow_252d_pct_aum, positive_flow_days_20d,
+  flow_60d_pct_aum, flow_252d_pct_aum, flow_1d_pct_aum, positive_flow_days_20d,
   relative_return_60d, volatility_60d, flow_score, dca_score, state, rank
 )
 values (
   %(sector)s, %(date)s, %(representative_ticker)s, %(flow_1d_usd)s,
   %(flow_5d_usd)s, %(flow_20d_usd)s, %(flow_60d_usd)s, %(flow_252d_usd)s,
   %(flow_5d_pct_aum)s, %(flow_20d_pct_aum)s, %(flow_60d_pct_aum)s,
-  %(flow_252d_pct_aum)s, %(positive_flow_days_20d)s, %(relative_return_60d)s,
+  %(flow_252d_pct_aum)s, %(flow_1d_pct_aum)s, %(positive_flow_days_20d)s, %(relative_return_60d)s,
   %(volatility_60d)s, %(flow_score)s, %(dca_score)s, %(state)s, %(rank)s
 )
 on conflict (sector, date) do update set
@@ -67,6 +67,7 @@ on conflict (sector, date) do update set
   flow_20d_pct_aum = excluded.flow_20d_pct_aum,
   flow_60d_pct_aum = excluded.flow_60d_pct_aum,
   flow_252d_pct_aum = excluded.flow_252d_pct_aum,
+  flow_1d_pct_aum = excluded.flow_1d_pct_aum,
   positive_flow_days_20d = excluded.positive_flow_days_20d,
   relative_return_60d = excluded.relative_return_60d,
   volatility_60d = excluded.volatility_60d,
