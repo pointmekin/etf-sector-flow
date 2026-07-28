@@ -120,9 +120,13 @@ tbody tr:hover { background: #f0efe7; }
 .period-links > span { margin-right: 8px; color: var(--muted); font: 400 10px 'DM Mono', monospace; text-transform: uppercase; }
 .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .chart-grid article { min-height: 300px; display: flex; flex-direction: column; justify-content: space-between; padding: 26px; border: 1px solid var(--line); background: var(--surface); }
-.mini-chart { width: 100%; height: 180px; overflow: visible; }
-.mini-chart line { stroke: var(--line); stroke-width: .5; }
-.mini-chart polyline { fill: none; stroke: var(--green); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.mini-chart { width: 100%; height: auto; overflow: visible; }
+.chart-axes line { stroke: var(--line); stroke-width: 1; }
+.chart-axes text { fill: var(--muted); font: 400 10px 'DM Mono', monospace; }
+.chart-axes .axis-title { fill: var(--ink); font-weight: 500; letter-spacing: .04em; }
+.mini-chart .chart-line { fill: none; stroke-width: 2.25; vector-effect: non-scaling-stroke; }
+.mini-chart .strategy-line { stroke: var(--green); }
+.mini-chart .spy-line { stroke: var(--blue); }
 .mini-chart rect.positive { fill: var(--green); }
 .mini-chart rect.negative { fill: var(--red); }
 .event-list article { display: grid; grid-template-columns: 120px 1fr; padding: 16px 0; border-top: 1px solid var(--line); }
@@ -153,6 +157,12 @@ tbody tr:hover { background: #f0efe7; }
 .summary-grid span { display: block; color: var(--muted); font: 400 10px 'DM Mono', monospace; text-transform: uppercase; }
 .summary-grid strong { display: block; margin-top: 8px; font: 600 26px 'Newsreader', serif; }
 .backtest-charts { margin-top: 20px; }
+.equity-comparison { min-height: 420px; padding: 26px; border: 1px solid var(--line); background: var(--surface); }
+.equity-comparison h2 { margin: 5px 0 24px; font: 600 29px 'Newsreader', serif; letter-spacing: -.025em; }
+.chart-legend { display: flex; justify-content: flex-end; gap: 20px; margin: 0 18px 8px 0; padding: 0; color: var(--muted); font: 500 11px 'DM Mono', monospace; list-style: none; }
+.chart-legend li::before { content: ''; display: inline-block; width: 20px; height: 3px; margin-right: 7px; vertical-align: middle; }
+.chart-legend .strategy-key::before { background: var(--green); }
+.chart-legend .spy-key::before { background: var(--blue); }
 
 footer { display: flex; justify-content: space-between; gap: 20px; padding: 28px clamp(20px, 4vw, 64px); color: var(--muted); border-top: 1px solid var(--line); font: 400 10px 'DM Mono', monospace; text-transform: uppercase; }
 

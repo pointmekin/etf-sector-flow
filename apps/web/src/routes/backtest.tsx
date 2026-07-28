@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { MiniChart } from "../components/mini-chart";
-import { requestBacktest, type BacktestResult } from "../server/backtest";
+import { EquityComparisonChart } from "../components/mini-chart";
+import { tone } from "../lib/format";
+import { type BacktestResult, requestBacktest } from "../server/backtest";
 
 export const Route = createFileRoute("/backtest")({ component: BacktestPage });
 
@@ -119,21 +120,16 @@ function BacktestResults({ result }: { result: BacktestResult }) {
 					</article>
 				))}
 			</div>
-			<div className="chart-grid backtest-charts">
-				<article>
+			<div className="backtest-charts">
+				<article className="equity-comparison">
 					<div>
-						<p className="eyebrow">Growth of $1</p>
-						<h2>Strategy equity</h2>
+						<p className="eyebrow">Performance comparison</p>
+						<h2>Growth of $1: Strategy vs. SPY</h2>
 					</div>
-					<MiniChart values={result.monthly_results.map((row) => row.equity)} />
-				</article>
-				<article>
-					<div>
-						<p className="eyebrow">Benchmark</p>
-						<h2>SPY equity</h2>
-					</div>
-					<MiniChart
-						values={result.monthly_results.map((row) => row.benchmark_equity)}
+					<EquityComparisonChart
+						dates={result.monthly_results.map((row) => row.execution_date)}
+						strategy={result.monthly_results.map((row) => row.equity)}
+						spy={result.monthly_results.map((row) => row.benchmark_equity)}
 					/>
 				</article>
 			</div>
@@ -161,8 +157,12 @@ function BacktestResults({ result }: { result: BacktestResult }) {
 									<td>{row.signal_date}</td>
 									<td>{row.execution_date}</td>
 									<td>{row.holdings.join(" · ")}</td>
-									<td>{(row.return * 100).toFixed(2)}%</td>
-									<td>{(row.benchmark_return * 100).toFixed(2)}%</td>
+									<td className={`flow-${tone(row.return)}`}>
+										{(row.return * 100).toFixed(2)}%
+									</td>
+									<td className={`flow-${tone(row.benchmark_return)}`}>
+										{(row.benchmark_return * 100).toFixed(2)}%
+									</td>
 								</tr>
 							))}
 						</tbody>

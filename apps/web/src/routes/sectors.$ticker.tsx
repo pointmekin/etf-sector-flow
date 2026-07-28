@@ -87,7 +87,11 @@ function SectorDetail() {
 					</div>
 					<MiniChart
 						values={data.history.map((row) => row.flowUsd)}
+						labels={data.history.map((row) => row.date)}
 						type="bar"
+						valueFormat="usd"
+						yAxisLabel="Daily flow (USD)"
+						ariaLabel="Daily fund flow"
 					/>
 				</article>
 				<article>
@@ -95,21 +99,39 @@ function SectorDetail() {
 						<p className="eyebrow">Persistent pressure</p>
 						<h2>Rolling 20-day flow</h2>
 					</div>
-					<MiniChart values={data.history.map((row) => row.flow20dUsd)} />
+					<MiniChart
+						values={data.history.map((row) => row.flow20dUsd)}
+						labels={data.history.map((row) => row.date)}
+						valueFormat="usd"
+						yAxisLabel="20-day flow (USD)"
+						ariaLabel="Rolling 20-day fund flow"
+					/>
 				</article>
 				<article>
 					<div>
 						<p className="eyebrow">Longer horizon</p>
 						<h2>Rolling 60-day flow</h2>
 					</div>
-					<MiniChart values={data.history.map((row) => row.flow60dUsd)} />
+					<MiniChart
+						values={data.history.map((row) => row.flow60dUsd)}
+						labels={data.history.map((row) => row.date)}
+						valueFormat="usd"
+						yAxisLabel="60-day flow (USD)"
+						ariaLabel="Rolling 60-day fund flow"
+					/>
 				</article>
 				<article>
 					<div>
 						<p className="eyebrow">Market confirmation</p>
 						<h2>Adjusted ETF price</h2>
 					</div>
-					<MiniChart values={data.history.map((row) => row.closePrice)} />
+					<MiniChart
+						values={data.history.map((row) => row.closePrice)}
+						labels={data.history.map((row) => row.date)}
+						valueFormat="usd"
+						yAxisLabel="Price (USD)"
+						ariaLabel="Adjusted ETF price"
+					/>
 				</article>
 				<article>
 					<div>
@@ -118,6 +140,10 @@ function SectorDetail() {
 					</div>
 					<MiniChart
 						values={data.history.map((row) => row.relativeReturn60d)}
+						labels={data.history.map((row) => row.date)}
+						valueFormat="percent"
+						yAxisLabel="Relative return"
+						ariaLabel="60-day relative return versus SPY"
 					/>
 				</article>
 				<article>
@@ -125,7 +151,12 @@ function SectorDetail() {
 						<p className="eyebrow">Cross-sector standing</p>
 						<h2>Historical DCA score</h2>
 					</div>
-					<MiniChart values={data.history.map((row) => row.dcaScore)} />
+					<MiniChart
+						values={data.history.map((row) => row.dcaScore)}
+						labels={data.history.map((row) => row.date)}
+						yAxisLabel="DCA score"
+						ariaLabel="Historical DCA score"
+					/>
 				</article>
 			</section>
 			{data.signals.length > 0 && (
