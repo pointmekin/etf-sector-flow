@@ -2,11 +2,23 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const requestSchema = z.object({
-	strategy: z.enum(["top_1", "top_2", "top_3", "equal_weight"]),
+	strategy: z.enum([
+		"top_1",
+		"top_2",
+		"top_3",
+		"equal_weight",
+		"top_3_momentum",
+		"spy_core_flow",
+		"spy_core_momentum",
+		"spy_core_momentum_flow",
+	]),
 	metric: z.enum(["flow_score", "dca_score"]),
 	start_date: z.string().date().nullable(),
 	transaction_cost_bps: z.number().min(0).max(1000),
+	execution_delay_days: z.number().int().min(1).max(20),
 });
+
+export type BacktestStrategy = z.infer<typeof requestSchema>["strategy"];
 
 export type BacktestResult = {
 	id: string;
@@ -17,6 +29,7 @@ export type BacktestResult = {
 		execution_date: string;
 		end_date: string;
 		holdings: string[];
+		weights: Record<string, number>;
 		return: number;
 		benchmark_return: number;
 		turnover: number;

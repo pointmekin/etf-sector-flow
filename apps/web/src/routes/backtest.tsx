@@ -3,22 +3,30 @@ import { useState } from "react";
 import { EquityComparisonChart } from "../components/mini-chart";
 import { tone } from "../lib/format";
 import { SECTOR_NAMES } from "../lib/sectors";
-import { type BacktestResult, requestBacktest } from "../server/backtest";
+import {
+	type BacktestResult,
+	type BacktestStrategy,
+	requestBacktest,
+} from "../server/backtest";
 
 export const Route = createFileRoute("/backtest")({ component: BacktestPage });
 
 const labels: Record<string, string> = {
 	cagr: "CAGR",
+	benchmark_cagr: "SPY CAGR",
+	excess_cagr: "Excess CAGR",
 	maximum_drawdown: "Max drawdown",
+	benchmark_maximum_drawdown: "SPY max drawdown",
 	annualized_volatility: "Volatility",
+	benchmark_annualized_volatility: "SPY volatility",
 	sharpe_ratio: "Sharpe",
-	sortino_ratio: "Sortino",
-	worst_12_month_return: "Worst 12M",
+	information_ratio: "Information ratio",
+	tracking_error: "Tracking error",
 	turnover: "Avg turnover",
 	months_outperforming_spy: "Beat SPY",
 };
 
-function BacktestPage() {
+export function BacktestPage() {
 	const [result, setResult] = useState<BacktestResult | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [pending, setPending] = useState(false);
@@ -31,14 +39,11 @@ function BacktestPage() {
 			setResult(
 				await requestBacktest({
 					data: {
-						strategy: String(form.get("strategy")) as
-							| "top_1"
-							| "top_2"
-							| "top_3"
-							| "equal_weight",
+						strategy: String(form.get("strategy")) as BacktestStrategy,
 						metric: String(form.get("metric")) as "flow_score" | "dca_score",
 						start_date: String(form.get("start_date") || "") || null,
 						transaction_cost_bps: Number(form.get("transaction_cost_bps")),
+						execution_delay_days: Number(form.get("execution_delay_days")),
 					},
 				}),
 			);
@@ -56,8 +61,9 @@ function BacktestPage() {
 					<p className="eyebrow">Strategy lab</p>
 					<h1>Test the rotation.</h1>
 					<p className="hero-copy">
-						Monthly, equal-weight sector strategies. Signals are frozen at the
-						prior month end and executed on the next available trading day.
+						Compare flow rankings, sector momentum, and SPY-core portfolios.
+						Every test requires a full 252-trading-day history before its first
+						signal.
 					</p>
 				</div>
 				<form onSubmit={submit} className="backtest-form">
@@ -68,6 +74,16 @@ function BacktestPage() {
 							<option value="top_2">Top 2 equal weight</option>
 							<option value="top_3">Top 3 equal weight</option>
 							<option value="equal_weight">All sectors equal weight</option>
+							<option value="top_3_momentum">Top 3 by 12-month momentum</option>
+							<option value="spy_core_flow">
+								70% SPY + flow-ranked sleeve
+							</option>
+							<option value="spy_core_momentum">
+								70% SPY + momentum sleeve
+							</option>
+							<option value="spy_core_momentum_flow">
+								Momentum + flow confirmation
+							</option>
 						</select>
 					</label>
 					<label>
@@ -80,6 +96,17 @@ function BacktestPage() {
 					<label>
 						<span>Start date</span>
 						<input name="start_date" type="date" />
+					</label>
+					<label>
+						<span>Execution delay (trading days)</span>
+						<input
+							name="execution_delay_days"
+							type="number"
+							min="1"
+							max="20"
+							step="1"
+							defaultValue="1"
+						/>
 					</label>
 					<label>
 						<span>Transaction cost (bps)</span>
@@ -103,7 +130,7 @@ function BacktestPage() {
 	);
 }
 
-function BacktestResults({ result }: { result: BacktestResult }) {
+export function BacktestResults({ result }: { result: BacktestResult }) {
 	const summaryEntries = Object.entries(result.summary).filter(([key]) =>
 		Object.hasOwn(labels, key),
 	);
@@ -147,7 +174,7 @@ function BacktestResults({ result }: { result: BacktestResult }) {
 							<tr>
 								<th>Signal</th>
 								<th>Execution</th>
-								<th>Holdings</th>
+								<th>Allocation</th>
 								<th>Return</th>
 								<th>SPY</th>
 							</tr>
@@ -161,7 +188,10 @@ function BacktestResults({ result }: { result: BacktestResult }) {
 										<div className="holding-list">
 											{row.holdings.map((ticker) => (
 												<span key={ticker}>
-													<strong>{ticker}</strong> {SECTOR_NAMES[ticker] ?? "Sector"}
+													<strong>{ticker}</strong>{" "}
+													{SECTOR_NAMES[ticker] ??
+														(ticker === "SPY" ? "S&P 500" : "Sector")}{" "}
+													{((row.weights[ticker] ?? 0) * 100).toFixed(1)}%
 												</span>
 											))}
 										</div>

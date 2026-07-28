@@ -40,10 +40,17 @@ function Methodology() {
 			</p>
 			<h2>Backtest assumptions</h2>
 			<p>
-				Monthly strategies use only information available at the prior month end
-				and trade on the next available day. Adjusted closing prices include
-				splits and distributions. Transaction costs apply only when allocations
-				change.
+				Monthly strategies require 252 trading days of history, freeze signals
+				at the prior month end, and trade after the selected one-to-twenty-day
+				execution delay. Adjusted closing prices include splits and
+				distributions. Transaction costs apply when allocations change.
+			</p>
+			<p>
+				Momentum ranks sectors by trailing 12-month adjusted-price return.
+				SPY-core strategies retain 70% in SPY and place 30% in three equal
+				active slots. The flow-confirmed variant standardizes each sector’s
+				20-day flow/AUM against its own prior 60 observations; unconfirmed slots
+				remain in SPY.
 			</p>
 			<h2>Limitations</h2>
 			<p>

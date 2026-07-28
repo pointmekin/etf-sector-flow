@@ -1260,8 +1260,8 @@ Keep this section updated throughout implementation.
 - [x] M5-03 Add a monthly top-three trailing-12-month sector-momentum strategy.
 - [x] M5-04 Add SPY-core variants for flow-ranked and momentum-ranked active sleeves.
 - [x] M5-05 Add standardized flow-surprise confirmation and confidence gating.
-- [ ] M5-06 Expose the new strategies, assumptions, and metrics in the web application. (IN PROGRESS — 2026-07-28)
-- [ ] M5-07 Add unit and integration coverage for timing, selection, weights, and reporting.
+- [x] M5-06 Expose the new strategies, assumptions, and metrics in the web application.
+- [x] M5-07 Add unit and integration coverage for timing, selection, weights, and reporting.
 
 **M5 acceptance:** The strategy lab can compare flow and momentum challengers against SPY using explicit timing assumptions and benchmark-relative risk metrics.
 
@@ -1337,4 +1337,5 @@ Add one concise entry after each meaningful implementation session.
 2026-07-28 — Added public data routes, constant-time Basic Auth for operational routes, synchronous persisted monthly backtests, baseline/SPY comparisons, transaction costs, a server-mediated backtest UI, and seven new auth/backtest tests; confirmed server credentials do not appear in the client bundle.
 2026-07-28 — Added Nitro/Vercel output, FastAPI container/Compose, CI, VPS deploy, daily schedule, Caddy example, and the owner setup checklist. Validated Compose memory/log/port settings and all 11 live workbook shapes; fixed disclosure/footer parsing and unavailable pre-2006 values. Docker Hub did not complete the base-image pull locally, so the image build remains a production/setup verification item.
 2026-07-28 — Began M5 strategy research implementation: enforced a 252-trading-day warm-up, added configurable execution delay, retained pre-start-date history, and added complete SPY-relative performance and risk metrics with tests.
+2026-07-28 — Completed M5 benchmark-aware research tools: added top-three 12-month momentum, 70/30 SPY-core flow and momentum sleeves, standardized flow confirmation with SPY fallback, and exposed exact assumptions, allocations, and benchmark-relative metrics in the strategy lab.
 ```
