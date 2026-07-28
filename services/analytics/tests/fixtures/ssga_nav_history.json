@@ -1,0 +1,9 @@
+{
+  "fund_name": "Synthetic Technology Sector ETF",
+  "ticker": "XLK",
+  "headers": ["Date", "NAV", "Shares Outstanding", "Total Net Assets"],
+  "rows": [
+    ["03-Jan-2025", 101.0, 1000000, 101000000],
+    ["02-Jan-2025", 100.0, 990000, 99000000]
+  ]
+}

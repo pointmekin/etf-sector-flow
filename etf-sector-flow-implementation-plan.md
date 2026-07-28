@@ -37,17 +37,17 @@ Keep task tracking lightweight. Do not create separate project-management infras
 
 ## 1. Current Status
 
-**Overall status:** Planning  
-**Current milestone:** M0 — repository and data-source validation  
+**Overall status:** Implementation in progress  
+**Current milestone:** M1 — data pipeline and calculations  
 **Production readiness:** Not started  
 
 ### Immediate next actions
 
-- Validate the State Street historical files for all 11 sector ETFs.
-- Confirm the exact columns for date, NAV, shares outstanding, and total net assets.
-- Create the monorepo with Bun, TanStack Start, FastAPI, and Drizzle.
+- Configure a Neon database and verify the local connection.
+- Implement the State Street ingestion and calculation pipeline.
+- Complete one end-to-end XLK refresh before extending to all funds.
 - Implement one complete vertical slice using XLK before processing the full ETF universe.
-- Confirm whether the Python container will initially run on the VPS or Google Cloud Run. Use only one active deployment target.
+- Provision the selected VPS deployment target before the production milestone.
 
 ---
 
@@ -1167,15 +1167,16 @@ Keep this section updated throughout implementation.
 
 ### M0 — Repository and source validation
 
-- [ ] M0-01 Create the Bun workspace and root scripts.
-- [ ] M0-02 Create the TanStack Start application.
-- [ ] M0-03 Install and configure Tailwind CSS and shadcn/ui.
-- [ ] M0-04 Create the FastAPI project with `uv` and a `/health` route.
-- [ ] M0-05 Create the Drizzle package and Neon connection configuration.
-- [ ] M0-06 Inspect State Street historical files for all 11 ETFs.
-- [ ] M0-07 Save one representative parser fixture without committing prohibited source data.
-- [ ] M0-08 Confirm the daily price source for ETF and SPY adjusted prices.
-- [ ] M0-09 Decide the initial Python deployment target: VPS or Cloud Run service.
+- [x] M0-01 Create the Bun workspace and root scripts.
+- [x] M0-02 Create the TanStack Start application.
+- [x] M0-03 Install and configure Tailwind CSS and shadcn/ui.
+- [x] M0-04 Create the FastAPI project with `uv` and a `/health` route.
+- [x] M0-05 Create the Drizzle package and Neon connection configuration.
+- [x] M0-06 Inspect State Street historical files for all 11 ETFs.
+- [x] M0-07 Save one representative parser fixture without committing prohibited source data.
+- [x] M0-08 Confirm Twelve Data `time_series?adjust=all` for ETF and SPY adjusted prices.
+- [x] M0-09 Select VPS as the initial Python deployment target.
+- [ ] M0-10 Verify the Neon connection (BLOCKED — requires `DATABASE_URL`).
 
 **M0 acceptance:** Both applications run locally, Neon is reachable, and the required State Street fields are confirmed.
 
@@ -1311,4 +1312,5 @@ Add one concise entry after each meaningful implementation session.
 
 ```text
 2026-07-28 — Replaced the original over-engineered plan with a minimal architecture using Bun, TanStack Start, Neon, one FastAPI service, Vercel, GitHub Actions, and a VPS-or-Cloud-Run deployment choice.
+2026-07-28 — Initialized Git and the Bun monorepo; scaffolded TanStack Start, Tailwind/shadcn, FastAPI, and Drizzle; validated the four required NAV-history columns across all 11 State Street files; selected Twelve Data adjusted prices and VPS deployment.
 ```

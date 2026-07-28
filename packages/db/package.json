@@ -1,0 +1,24 @@
+{
+  "name": "@sector-flow/db",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts", "./schema": "./src/schema.ts" },
+  "scripts": {
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate",
+    "lint": "biome lint .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
+    "drizzle-orm": "^0.44.7"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.5",
+    "@types/node": "^22.10.2",
+    "drizzle-kit": "^0.31.8",
+    "typescript": "^5.7.3"
+  }
+}

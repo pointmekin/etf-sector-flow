@@ -1,0 +1,14 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+node_modules/
+.output/
+dist/
+coverage/
+*.log
+services/analytics/data/

@@ -1,0 +1,15 @@
+{
+  "name": "etf-sector-flow",
+  "private": true,
+  "packageManager": "bun@1.3.14",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "bun --filter web dev",
+    "lint": "bun --filter '*' lint",
+    "typecheck": "bun --filter '*' typecheck",
+    "test": "bun --filter '*' test",
+    "build": "bun --filter '*' build",
+    "db:generate": "bun --filter @sector-flow/db generate",
+    "db:migrate": "bun --filter @sector-flow/db migrate"
+  }
+}
