@@ -36,7 +36,7 @@ jobs:
 
             timeout=45
             elapsed=0
-            until curl --fail --silent http://localhost:8000/health > /dev/null; do
+            until curl --fail --silent http://localhost:8001/health > /dev/null; do
               if [ "$elapsed" -ge "$timeout" ]; then
                 docker compose logs --tail=200 analytics
                 exit 1

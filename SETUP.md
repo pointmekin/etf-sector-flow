@@ -12,8 +12,8 @@ not configured.
       and the intended public use.
 - [X] Confirm State Street and Twelve Data terms permit publishing the derived
       metrics for your audience.
-- [X] Prepare a Linux VPS with Git, Docker Engine, Docker Compose v2, and Caddy
-      (or an existing HTTPS reverse proxy). Start with at least 1 vCPU / 1 GB RAM.
+- [X] Prepare a Linux VPS with Git, Docker Engine, Docker Compose v2, and the
+      existing Nginx reverse proxy. Start with at least 1 vCPU / 1 GB RAM.
 - [ ] Create a Vercel project connected to the repository.
 - [ ] Choose the public web and API domains and control their DNS records.
 
@@ -39,11 +39,12 @@ Do not prefix any secret with `VITE_`.
   - `APP_ENV=production`
   - `LOG_LEVEL=INFO`
   - `ALLOWED_ORIGINS=https://your-web-domain`
-  - `PORT=8000`
+  - `PORT=8000` — this remains the container's internal port.
 - [ ] Run `docker compose up -d --build analytics`.
-- [ ] Configure Caddy/Nginx from `deploy/Caddyfile.example`, replace the hostname,
-      and point the API DNS record to the VPS.
-- [ ] Verify port 8000 is bound only to `127.0.0.1`; expose only HTTPS ports 80/443.
+- [ ] Configure Nginx from `deploy/nginx-etf-sector-flow.conf.example`, replace the
+      hostname, enable HTTPS, and point the API DNS record to the VPS.
+- [ ] Verify host port 8001 is bound only to `127.0.0.1`; expose only HTTPS ports
+      80/443. The container continues to listen on port 8000 internally.
 
 ## GitHub repository secrets
 

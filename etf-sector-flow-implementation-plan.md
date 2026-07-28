@@ -875,7 +875,7 @@ jobs:
 
             timeout=45
             elapsed=0
-            until curl --fail --silent http://localhost:8000/health > /dev/null; do
+            until curl --fail --silent http://localhost:8001/health > /dev/null; do
               if [ "$elapsed" -ge "$timeout" ]; then
                 echo "Health check failed"
                 docker compose logs --tail=200 analytics
@@ -906,7 +906,7 @@ services:
     env_file:
       - ./services/analytics/.env
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8001:8000"
     command: >
       sh -c 'uvicorn sector_flow.api:app
       --host 0.0.0.0
@@ -941,11 +941,11 @@ The deployment workflow prunes unused images and old builder cache. Do not autom
 Use the VPS's existing reverse proxy if available. Otherwise use a minimal Caddy or Nginx configuration to:
 
 - Terminate HTTPS.
-- Proxy a dedicated API hostname to `127.0.0.1:8000`.
+- Proxy a dedicated API hostname to `127.0.0.1:8001`.
 - Reject plain HTTP or redirect it to HTTPS.
 - Optionally add a conservative request-body limit.
 
-Do not expose port 8000 publicly.
+Do not expose host port 8001 or container port 8000 publicly.
 
 ### 14.5 Google Cloud Run service alternative
 
@@ -1240,7 +1240,7 @@ Keep this section updated throughout implementation.
 - [x] M4-02 Create the production FastAPI Dockerfile.
 - [x] M4-03 Create and validate `docker-compose.yml` with 512 MB memory, loopback port, health, and 30 MB log limits.
 - [x] M4-04 Add the VPS SSH deployment workflow with health check and bounded image/cache pruning.
-- [ ] M4-05 Configure VPS HTTPS and reverse proxy (BLOCKED — requires VPS and API domain; Caddy example provided).
+- [ ] M4-05 Configure VPS HTTPS and reverse proxy (BLOCKED — requires API domain; Nginx example provided).
 - [x] M4-06 Exclude Cloud Run because VPS is the selected single target.
 - [ ] M4-07 Configure Vercel and production environment variables (BLOCKED — requires Vercel project and secrets).
 - [x] M4-08 Add the GitHub Actions daily-refresh workflow.
@@ -1338,4 +1338,5 @@ Add one concise entry after each meaningful implementation session.
 2026-07-28 — Completed M5 benchmark-aware research tools: added top-three 12-month momentum, 70/30 SPY-core flow and momentum sleeves, standardized flow confirmation with SPY fallback, and exposed exact assumptions, allocations, and benchmark-relative metrics in the strategy lab.
 2026-07-28 — Verified all four M5 strategies end to end against 85 monthly periods in the configured database, then passed 30 analytics tests, five web tests, lint, typecheck, and the production build.
 2026-07-29 — Moved the weekday data refresh to 23:00 UTC Monday–Friday, corresponding to 06:00 Asia/Bangkok Tuesday–Saturday after each US trading session.
+2026-07-29 — Moved the analytics host binding to loopback port 8001 because port 8000 is occupied, updated deployment health checks, and added an Nginx reverse-proxy example with long-job timeouts.
 ```
