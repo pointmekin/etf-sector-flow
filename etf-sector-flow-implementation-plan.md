@@ -38,14 +38,14 @@ Keep task tracking lightweight. Do not create separate project-management infras
 ## 1. Current Status
 
 **Overall status:** Implementation in progress  
-**Current milestone:** M3 — API and backtesting  
+**Current milestone:** M4 — deployment and release  
 **Production readiness:** Not started  
 
 ### Immediate next actions
 
 - Configure a Neon database and verify the local connection.
 - Configure `DATABASE_URL` and `TWELVE_DATA_API_KEY`, migrate, and run the XLK/full refresh.
-- Implement the public/protected API and look-ahead-safe monthly backtests.
+- Add CI, container, VPS deployment, scheduling, and release documentation.
 - Implement one complete vertical slice using XLK before processing the full ETF universe.
 - Provision the selected VPS deployment target before the production milestone.
 
@@ -1217,16 +1217,16 @@ Keep this section updated throughout implementation.
 
 ### M3 — API and backtesting
 
-- [ ] M3-01 Implement public sector-data API routes.
-- [ ] M3-02 Add FastAPI HTTP Basic Auth helper.
-- [ ] M3-03 Implement the protected daily-refresh route.
-- [ ] M3-04 Implement the protected job-status route.
-- [ ] M3-05 Implement the monthly backtest engine.
-- [ ] M3-06 Add baseline strategies and SPY comparison.
-- [ ] M3-07 Add transaction-cost support.
-- [ ] M3-08 Add look-ahead-bias and date-alignment tests.
-- [ ] M3-09 Implement protected backtest API routes.
-- [ ] M3-10 Build the backtest page and result charts.
+- [x] M3-01 Implement public sector-data API routes.
+- [x] M3-02 Add FastAPI HTTP Basic Auth helper with constant-time comparisons.
+- [x] M3-03 Implement the protected daily-refresh and recalculate routes.
+- [x] M3-04 Implement the protected job-status route.
+- [x] M3-05 Implement the monthly backtest engine.
+- [x] M3-06 Add top-one/two/three, DCA/flow, equal-weight, and SPY comparison strategies.
+- [x] M3-07 Add transaction-cost support.
+- [x] M3-08 Add look-ahead-bias, next-trading-day, missing-data, weight, cost, and alignment tests.
+- [x] M3-09 Implement protected synchronous backtest API routes and persisted results.
+- [x] M3-10 Build the backtest form, summary, equity charts, and monthly holdings table.
 
 **M3 acceptance:** The public site shows current data, and a protected API call can run a reproducible monthly backtest.
 
@@ -1315,4 +1315,5 @@ Add one concise entry after each meaningful implementation session.
 2026-07-28 — Initialized Git and the Bun monorepo; scaffolded TanStack Start, Tailwind/shadcn, FastAPI, and Drizzle; validated the four required NAV-history columns across all 11 State Street files; selected Twelve Data adjusted prices and VPS deployment.
 2026-07-28 — Added the six-table Drizzle migration, fund seeding, streaming State Street/Twelve Data ingestion, flow and split calculations, rolling scores/states/ranks, notifications, and an idempotent daily job; eight analytics tests pass. Live database validation remains credential-blocked.
 2026-07-28 — Built the editorial public dashboard, ranking table with rank change, horizon heatmap, signals, shareable sector histories, fixed charts, methodology, responsive states, and metadata; verified typecheck, lint, render smoke test, production build, and desktop/compact browser layouts.
+2026-07-28 — Added public data routes, constant-time Basic Auth for operational routes, synchronous persisted monthly backtests, baseline/SPY comparisons, transaction costs, a server-mediated backtest UI, and seven new auth/backtest tests; confirmed server credentials do not appear in the client bundle.
 ```
