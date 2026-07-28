@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { EquityComparisonChart } from "../components/mini-chart";
 import { tone } from "../lib/format";
+import { SECTOR_NAMES } from "../lib/sectors";
 import { type BacktestResult, requestBacktest } from "../server/backtest";
 
 export const Route = createFileRoute("/backtest")({ component: BacktestPage });
@@ -156,7 +157,15 @@ function BacktestResults({ result }: { result: BacktestResult }) {
 								<tr key={row.execution_date}>
 									<td>{row.signal_date}</td>
 									<td>{row.execution_date}</td>
-									<td>{row.holdings.join(" · ")}</td>
+									<td>
+										<div className="holding-list">
+											{row.holdings.map((ticker) => (
+												<span key={ticker}>
+													<strong>{ticker}</strong> {SECTOR_NAMES[ticker] ?? "Sector"}
+												</span>
+											))}
+										</div>
+									</td>
 									<td className={`flow-${tone(row.return)}`}>
 										{(row.return * 100).toFixed(2)}%
 									</td>

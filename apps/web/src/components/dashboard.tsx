@@ -1,6 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import type { DashboardData, SectorRow } from "../lib/types";
+import { useState } from "react";
 import { formatPercent, formatUsd, tone } from "../lib/format";
+import type {
+	DashboardData,
+	FlowHistoryPoint,
+	SectorRow,
+} from "../lib/types";
 
 type Metric = "pct" | "usd";
 
@@ -95,8 +100,183 @@ export function DashboardView({
 					<ScoreBars sectors={data.sectors} />
 				</div>
 			</section>
+
+			<FlowStateGuide sectors={data.sectors} />
+			<SectorFlowTimeline
+				sectors={data.sectors}
+				points={data.flowHistory}
+			/>
 		</div>
 	);
+}
+
+const flowStates = [
+	{
+		name: "Distribution",
+		description:
+			"Persistent 20- and 60-day outflows with a Flow Score below 35. Redemptions are dominating.",
+	},
+	{
+		name: "Neutral",
+		description:
+			"Flows are mixed or lack enough persistence to support a positive or negative classification.",
+	},
+	{
+		name: "Early Rotation",
+		description:
+			"Five-day flows and acceleration have turned positive while the longer 60-day trend is still catching up.",
+	},
+	{
+		name: "Accumulation",
+		description:
+			"Both 20- and 60-day flows are positive and the Flow Score is at least 65. Capital is building steadily.",
+	},
+	{
+		name: "Strong but Crowded",
+		description:
+			"The Flow Score is at least 85 and price is extended. Demand is strong, but crowding risk is elevated.",
+	},
+] as const;
+
+function FlowStateGuide({ sectors }: { sectors: SectorRow[] }) {
+	return (
+		<section className="section-block phase-section">
+			<div className="section-heading">
+				<div>
+					<p className="eyebrow">Flow phases</p>
+					<h2>Read the capital cycle</h2>
+				</div>
+				<p className="phase-direction">Net selling → building demand → extended demand</p>
+			</div>
+			<div className="phase-track">
+				{flowStates.map((phase, index) => {
+					const members = sectors.filter((sector) => sector.state === phase.name);
+					return (
+						<article className={`phase-card phase-${index + 1}`} key={phase.name}>
+							<span className="phase-index">0{index + 1}</span>
+							<h3>{phase.name}</h3>
+							<p>{phase.description}</p>
+							<div className="phase-members">
+								{members.length ? (
+									members.map((sector) => (
+										<Link
+											key={sector.ticker}
+											to="/sectors/$ticker"
+											params={{ ticker: sector.ticker }}
+											search={{ days: 252 }}
+										>
+											<strong>{sector.ticker}</strong> {sector.sector}
+										</Link>
+									))
+								) : (
+									<span>No sectors currently</span>
+								)}
+							</div>
+						</article>
+					);
+				})}
+			</div>
+		</section>
+	);
+}
+
+function SectorFlowTimeline({
+	sectors,
+	points,
+}: {
+	sectors: SectorRow[];
+	points: FlowHistoryPoint[];
+}) {
+	const [active, setActive] = useState<FlowHistoryPoint | null>(null);
+	const dates = [...new Set(points.map((point) => point.date))].sort();
+	const byTicker = new Map<string, Map<string, FlowHistoryPoint>>();
+	for (const point of points) {
+		const history = byTicker.get(point.ticker) ?? new Map();
+		history.set(point.date, point);
+		byTicker.set(point.ticker, history);
+	}
+	if (dates.length === 0) return null;
+
+	return (
+		<section className="section-block timeline-section">
+			<div className="section-heading">
+				<div>
+					<p className="eyebrow">Daily creations and redemptions</p>
+					<h2>How money moves through sectors</h2>
+				</div>
+				<div className="flow-legend">
+					<span className="inflow-key">Inflow</span>
+					<span className="outflow-key">Outflow</span>
+				</div>
+			</div>
+			<p className="timeline-note">
+				Each row shows the last 120 calendar days. Color intensity is normalized
+				within that sector; hover a day for the exact dollar flow.
+			</p>
+			<div className={`timeline-readout flow-${tone(active?.flowUsd ?? null)}`} aria-live="polite">
+				{active ? (
+					<>
+						<strong>{active.ticker} · {active.sector}</strong>
+						<span>{active.date} · {signedUsd(active.flowUsd)}</span>
+					</>
+				) : (
+					<span>Hover over a colored day to inspect its flow.</span>
+				)}
+			</div>
+			<div className="timeline-scroll">
+				<div className="timeline-axis">
+					<span />
+					<div style={{ width: dates.length * 11 }}>
+						<time>{dates[0]}</time>
+						<time>{dates.at(-1)}</time>
+					</div>
+				</div>
+				{sectors.map((sector) => {
+					const history = byTicker.get(sector.ticker);
+					const max = Math.max(
+						...dates.map((date) => Math.abs(history?.get(date)?.flowUsd ?? 0)),
+						1,
+					);
+					return (
+						<div className="timeline-row" key={sector.ticker}>
+							<Link
+								to="/sectors/$ticker"
+								params={{ ticker: sector.ticker }}
+								search={{ days: 252 }}
+								className="timeline-sector"
+							>
+								<strong>{sector.ticker}</strong>
+								<span>{sector.sector}</span>
+							</Link>
+							<div
+								className="timeline-cells"
+								style={{ gridTemplateColumns: `repeat(${dates.length}, 10px)` }}
+							>
+								{dates.map((date) => {
+									const point = history?.get(date);
+									const value = point?.flowUsd ?? null;
+									return (
+										<span
+											key={date}
+											className={`timeline-cell ${tone(value)}`}
+											style={{ "--intensity": value === null ? 0 : 0.18 + Math.abs(value) / max * 0.82 } as React.CSSProperties}
+											onPointerEnter={() => point && setActive(point)}
+											title={point ? `${point.date}: ${signedUsd(point.flowUsd)}` : `${date}: no data`}
+										/>
+									);
+								})}
+							</div>
+						</div>
+					);
+				})}
+			</div>
+		</section>
+	);
+}
+
+function signedUsd(value: number | null): string {
+	if (value === null) return "No data";
+	return `${value > 0 ? "+" : ""}${formatUsd(value)}`;
 }
 
 function StatusStrip({ data }: { data: DashboardData }) {
@@ -298,14 +478,17 @@ function FlowHeatmap({
 	return (
 		<div className="heatmap">
 			<div className="heatmap-row heatmap-head">
-				<span>Sector</span>
+				<span>Ticker · sector</span>
 				{periods.map(([label]) => (
 					<span key={label}>{label}</span>
 				))}
 			</div>
 			{sectors.map((sector) => (
 				<div className="heatmap-row" key={sector.ticker}>
-					<span>{sector.ticker}</span>
+					<span className="heatmap-sector">
+						<strong>{sector.ticker}</strong>
+						<small>{sector.sector}</small>
+					</span>
 					{periods.map(([label, usd, pct]) => {
 						const value = sector[metric === "usd" ? usd : pct] as number | null;
 						return (
@@ -329,7 +512,10 @@ function ScoreBars({ sectors }: { sectors: SectorRow[] }) {
 		<div className="score-bars">
 			{sectors.map((sector) => (
 				<div key={sector.ticker}>
-					<span>{sector.ticker}</span>
+					<span className="score-sector">
+						<strong>{sector.ticker}</strong>
+						<small>{sector.sector}</small>
+					</span>
 					<div>
 						<i style={{ width: `${sector.dcaScore ?? 0}%` }} />
 					</div>

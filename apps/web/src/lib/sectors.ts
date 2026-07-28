@@ -1,0 +1,13 @@
+export const SECTOR_NAMES: Record<string, string> = {
+	XLC: "Communication Services",
+	XLY: "Consumer Discretionary",
+	XLP: "Consumer Staples",
+	XLE: "Energy",
+	XLF: "Financials",
+	XLV: "Health Care",
+	XLI: "Industrials",
+	XLB: "Materials",
+	XLRE: "Real Estate",
+	XLK: "Technology",
+	XLU: "Utilities",
+};

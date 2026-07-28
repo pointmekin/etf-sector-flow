@@ -1,3 +1,6 @@
+import { useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
+
 type ValueFormat = "number" | "percent" | "usd";
 
 const WIDTH = 640;
@@ -22,6 +25,8 @@ export function MiniChart({
 	const clean = values.map((value) => value ?? 0);
 	const domain = getDomain(clean, type === "bar");
 	const points = toPoints(clean, domain);
+	const hover = useChartHover(clean.length);
+	const activeValue = hover.index === null ? null : clean[hover.index];
 
 	return (
 		<svg
@@ -29,8 +34,11 @@ export function MiniChart({
 			viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
 			role="img"
 			aria-label={ariaLabel}
+			onPointerMove={hover.onPointerMove}
+			onPointerLeave={hover.clear}
 		>
 			<title>{ariaLabel}</title>
+			<desc>Hover over the chart to inspect values by date.</desc>
 			<ChartAxes
 				domain={domain}
 				labels={labels}
@@ -42,6 +50,17 @@ export function MiniChart({
 			) : (
 				<polyline className="chart-line strategy-line" points={points} />
 			)}
+			{hover.index !== null && activeValue !== null ? (
+				<SingleValueTooltip
+					index={hover.index}
+					length={clean.length}
+					value={activeValue}
+					date={labels?.[hover.index]}
+					format={valueFormat}
+					label={yAxisLabel}
+					domain={domain}
+				/>
+			) : null}
 		</svg>
 	);
 }
@@ -56,6 +75,7 @@ export function EquityComparisonChart({
 	spy: number[];
 }) {
 	const domain = getDomain([...strategy, ...spy], false);
+	const hover = useChartHover(Math.min(dates.length, strategy.length, spy.length));
 	return (
 		<div className="comparison-chart">
 			<ul className="chart-legend" aria-label="Chart legend">
@@ -67,8 +87,11 @@ export function EquityComparisonChart({
 				viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
 				role="img"
 				aria-label="Strategy and SPY growth of one dollar"
+				onPointerMove={hover.onPointerMove}
+				onPointerLeave={hover.clear}
 			>
 				<title>Strategy and SPY growth of one dollar</title>
+				<desc>Hover over the chart to compare Strategy and SPY values by date.</desc>
 				<ChartAxes
 					domain={domain}
 					labels={dates}
@@ -83,8 +106,96 @@ export function EquityComparisonChart({
 					className="chart-line spy-line"
 					points={toPoints(spy, domain)}
 				/>
+				{hover.index !== null ? (
+					<ComparisonTooltip
+						index={hover.index}
+						length={dates.length}
+						date={dates[hover.index]}
+						strategy={strategy[hover.index]}
+						spy={spy[hover.index]}
+						domain={domain}
+					/>
+				) : null}
 			</svg>
 		</div>
+	);
+}
+
+function SingleValueTooltip({
+	index,
+	length,
+	value,
+	date,
+	format,
+	label,
+	domain,
+}: {
+	index: number;
+	length: number;
+	value: number;
+	date?: string;
+	format: ValueFormat;
+	label: string;
+	domain: [number, number];
+}) {
+	const x = xPosition(index, length);
+	const y = yPosition(value, domain);
+	const boxX = x > WIDTH - 180 ? x - 164 : x + 12;
+	const boxY = Math.max(PLOT.top + 4, Math.min(y - 50, PLOT.bottom - 48));
+	return (
+		<g className="chart-tooltip">
+			<line className="hover-guide" x1={x} x2={x} y1={PLOT.top} y2={PLOT.bottom} />
+			<circle
+				className={value >= 0 ? "tooltip-point positive" : "tooltip-point negative"}
+				cx={x}
+				cy={y}
+				r="4"
+			/>
+			<rect x={boxX} y={boxY} width="152" height="43" rx="3" />
+			<text className="tooltip-date" x={boxX + 9} y={boxY + 15}>
+				{formatDate(date) || "Value"}
+			</text>
+			<text className="tooltip-value" x={boxX + 9} y={boxY + 33}>
+				{label}: {formatTooltipValue(value, format)}
+			</text>
+		</g>
+	);
+}
+
+function ComparisonTooltip({
+	index,
+	length,
+	date,
+	strategy,
+	spy,
+	domain,
+}: {
+	index: number;
+	length: number;
+	date?: string;
+	strategy?: number;
+	spy?: number;
+	domain: [number, number];
+}) {
+	if (strategy === undefined || spy === undefined) return null;
+	const x = xPosition(index, length);
+	const boxX = x > WIDTH - 200 ? x - 182 : x + 12;
+	return (
+		<g className="chart-tooltip">
+			<line className="hover-guide" x1={x} x2={x} y1={PLOT.top} y2={PLOT.bottom} />
+			<circle className="tooltip-point strategy-point" cx={x} cy={yPosition(strategy, domain)} r="4" />
+			<circle className="tooltip-point spy-point" cx={x} cy={yPosition(spy, domain)} r="4" />
+			<rect x={boxX} y="20" width="170" height="62" rx="3" />
+			<text className="tooltip-date" x={boxX + 10} y="36">
+				{formatDate(date)}
+			</text>
+			<text className="tooltip-value strategy-value" x={boxX + 10} y="54">
+				Strategy: {formatTooltipValue(strategy, "usd")}
+			</text>
+			<text className="tooltip-value spy-value" x={boxX + 10} y="71">
+				SPY: {formatTooltipValue(spy, "usd")}
+			</text>
+		</g>
 	);
 }
 
@@ -190,14 +301,16 @@ function getDomain(values: number[], centered: boolean): [number, number] {
 }
 
 function toPoints(values: number[], domain: [number, number]): string {
-	const plotWidth = WIDTH - PLOT.left - PLOT.right;
 	return values
 		.map((value, index) => {
-			const x =
-				PLOT.left + (index / Math.max(values.length - 1, 1)) * plotWidth;
-			return `${x},${yPosition(value, domain)}`;
+			return `${xPosition(index, values.length)},${yPosition(value, domain)}`;
 		})
 		.join(" ");
+}
+
+function xPosition(index: number, length: number): number {
+	const plotWidth = WIDTH - PLOT.left - PLOT.right;
+	return PLOT.left + (index / Math.max(length - 1, 1)) * plotWidth;
 }
 
 function yPosition(value: number, [min, max]: [number, number]): number {
@@ -217,8 +330,36 @@ function formatAxisValue(value: number, format: ValueFormat): string {
 	return Math.abs(value) >= 100 ? value.toFixed(0) : value.toFixed(1);
 }
 
+function formatTooltipValue(value: number, format: ValueFormat): string {
+	if (format === "percent") return `${(value * 100).toFixed(2)}%`;
+	if (format === "usd") {
+		return new Intl.NumberFormat("en-US", {
+			style: "currency",
+			currency: "USD",
+			notation: Math.abs(value) >= 10_000 ? "compact" : "standard",
+			maximumFractionDigits: Math.abs(value) < 10 ? 3 : 2,
+		}).format(value);
+	}
+	return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
 function formatDate(value: string | undefined): string {
 	if (!value) return "";
 	const [year, month, day] = value.slice(0, 10).split("-");
 	return year && month && day ? `${month}/${day}/${year}` : value;
+}
+
+function useChartHover(length: number) {
+	const [index, setIndex] = useState<number | null>(null);
+	function onPointerMove(event: ReactPointerEvent<SVGSVGElement>) {
+		if (length === 0) return;
+		const bounds = event.currentTarget.getBoundingClientRect();
+		const svgX = ((event.clientX - bounds.left) / bounds.width) * WIDTH;
+		const progress = Math.min(
+			1,
+			Math.max(0, (svgX - PLOT.left) / (WIDTH - PLOT.left - PLOT.right)),
+		);
+		setIndex(Math.round(progress * Math.max(length - 1, 0)));
+	}
+	return { index, onPointerMove, clear: () => setIndex(null) };
 }

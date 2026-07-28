@@ -20,7 +20,14 @@ function database() {
 export const getDashboardData = createServerFn({ method: "GET" }).handler(
 	async () => {
 		const db = database();
-		if (!db) return { date: null, latestJob: null, sectors: [], signals: [] };
+		if (!db)
+			return {
+				date: null,
+				latestJob: null,
+				sectors: [],
+				signals: [],
+				flowHistory: [],
+			};
 		const latest = await db
 			.selectDistinct({ date: sectorDaily.date })
 			.from(sectorDaily)
@@ -53,6 +60,23 @@ export const getDashboardData = createServerFn({ method: "GET" }).handler(
 			.from(jobRun)
 			.orderBy(desc(jobRun.startedAt))
 			.limit(1);
+		const flowHistory = date
+			? await db
+					.select({
+						sector: sectorDaily.sector,
+						ticker: sectorDaily.representativeTicker,
+						date: sectorDaily.date,
+						flowUsd: sectorDaily.flow1dUsd,
+					})
+					.from(sectorDaily)
+					.where(
+						gte(
+							sectorDaily.date,
+							sql<string>`${date}::date - interval '120 days'`,
+						),
+					)
+					.orderBy(sectorDaily.date)
+			: [];
 		return {
 			date,
 			latestJob: jobs[0]
@@ -86,6 +110,12 @@ export const getDashboardData = createServerFn({ method: "GET" }).handler(
 						: null,
 			})),
 			signals: signals.map((signal) => ({ ...signal, createdAt: undefined })),
+			flowHistory: flowHistory.map((row) => ({
+				sector: row.sector,
+				ticker: row.ticker,
+				date: row.date,
+				flowUsd: number(row.flowUsd),
+			})),
 		};
 	},
 );

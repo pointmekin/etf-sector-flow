@@ -38,6 +38,14 @@ export type DashboardData = {
 	} | null;
 	sectors: SectorRow[];
 	signals: Signal[];
+	flowHistory: FlowHistoryPoint[];
+};
+
+export type FlowHistoryPoint = {
+	sector: string;
+	ticker: string;
+	date: string;
+	flowUsd: number | null;
 };
 
 export type HistoryRow = SectorRow & {

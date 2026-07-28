@@ -18,7 +18,13 @@ test("dashboard renders its empty data state", async () => {
 		component: () => (
 			<DashboardView
 				metric="pct"
-				data={{ date: null, latestJob: null, sectors: [], signals: [] }}
+				data={{
+					date: null,
+					latestJob: null,
+					sectors: [],
+					signals: [],
+					flowHistory: [],
+				}}
 			/>
 		),
 	});
