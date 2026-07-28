@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import date
 from decimal import Decimal
@@ -12,6 +13,9 @@ from .funds import FUNDS, PRICE_TICKERS
 from .ingestion import download_to_temp, fetch_adjusted_prices, parse_nav_history
 
 logger = logging.getLogger(__name__)
+
+TWELVE_DATA_MINUTE_QUOTA = 8
+TWELVE_DATA_QUOTA_WAIT_SECONDS = 60
 
 FUND_UPSERT_SQL = """
 insert into fund (ticker, name, sector, source_url, inception_date, active)
@@ -121,7 +125,8 @@ async def daily_refresh() -> dict[str, Any]:
                     rows_processed += len(rows)
                     source_date = max(source_date or rows[-1].date, rows[-1].date)
 
-                for ticker in PRICE_TICKERS:
+                for request_index, ticker in enumerate(PRICE_TICKERS):
+                    await _wait_for_twelve_data_quota(request_index)
                     prices = await fetch_adjusted_prices(
                         client, ticker, settings.twelve_data_api_key
                     )
@@ -160,6 +165,11 @@ async def daily_refresh() -> dict[str, Any]:
             (rows_processed, str(error)[:1000], job_id),
         )
         raise
+
+
+async def _wait_for_twelve_data_quota(request_index: int) -> None:
+    if request_index and request_index % TWELVE_DATA_MINUTE_QUOTA == 0:
+        await asyncio.sleep(TWELVE_DATA_QUOTA_WAIT_SECONDS)
 
 
 def seed_funds(cursor: Any) -> None:
