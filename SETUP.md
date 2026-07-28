@@ -84,6 +84,6 @@ access to the GitHub repository, usually through a separate read-only deploy key
 - [ ] Smoke-test `/`, `/sectors/XLK`, `/backtest`, `/methodology`, and public API
       routes from mobile and desktop browsers.
 - [ ] Run the GitHub daily-refresh workflow manually, then confirm its weekday
-      schedule is enabled (15:30 UTC / 22:30 Asia/Bangkok).
+      schedule is enabled (23:00 UTC Monday–Friday / 06:00 Asia/Bangkok Tuesday–Saturday).
 - [ ] Confirm `docker inspect` shows the 512 MB limit and Docker log options
       `max-size=10m`, `max-file=3`.

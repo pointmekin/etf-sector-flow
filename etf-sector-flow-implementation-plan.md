@@ -1,7 +1,7 @@
 # ETF Sector Flow Monitor — Minimal End-to-End Implementation Plan
 
 **Document status:** Active implementation plan  
-**Last updated:** 2026-07-28  
+**Last updated:** 2026-07-29  
 **Primary maintainer:** Point  
 **Target:** Public, shareable daily ETF sector-flow website  
 **Primary timezone:** Asia/Bangkok  
@@ -782,7 +782,7 @@ name: Daily sector-flow refresh
 
 on:
   schedule:
-    - cron: "30 15 * * 1-5" # 22:30 Asia/Bangkok
+    - cron: "0 23 * * 1-5" # 06:00 Asia/Bangkok on the following day
   workflow_dispatch:
 
 jobs:
@@ -1337,4 +1337,5 @@ Add one concise entry after each meaningful implementation session.
 2026-07-28 — Began M5 strategy research implementation: enforced a 252-trading-day warm-up, added configurable execution delay, retained pre-start-date history, and added complete SPY-relative performance and risk metrics with tests.
 2026-07-28 — Completed M5 benchmark-aware research tools: added top-three 12-month momentum, 70/30 SPY-core flow and momentum sleeves, standardized flow confirmation with SPY fallback, and exposed exact assumptions, allocations, and benchmark-relative metrics in the strategy lab.
 2026-07-28 — Verified all four M5 strategies end to end against 85 monthly periods in the configured database, then passed 30 analytics tests, five web tests, lint, typecheck, and the production build.
+2026-07-29 — Moved the weekday data refresh to 23:00 UTC Monday–Friday, corresponding to 06:00 Asia/Bangkok Tuesday–Saturday after each US trading session.
 ```
