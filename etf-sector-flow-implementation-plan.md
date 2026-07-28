@@ -37,17 +37,15 @@ Keep task tracking lightweight. Do not create separate project-management infras
 
 ## 1. Current Status
 
-**Overall status:** Strategy improvements in progress; owner setup pending
+**Overall status:** Strategy improvements complete; owner setup pending
 
-**Current milestone:** M5 — benchmark-aware strategy research
+**Current milestone:** M4 — production activation; M5 research tooling complete
 
 **Production readiness:** Deployment artifacts verified; accounts, secrets, DNS, backfill, and smoke test pending
 
 ### Immediate next actions
 
-- Correct backtest warm-up, execution-lag, and benchmark-relative reporting.
-- Add simple sector-momentum and SPY-core strategy candidates.
-- Add standardized flow confirmation without expanding the data architecture.
+- Paper-trade the frozen benchmark-aware candidates before treating results as evidence.
 - Complete the owner checklist in `SETUP.md`.
 - Migrate Neon and run the initial historical refresh.
 - Deploy the analytics container to the VPS and the web app to Vercel.
@@ -1338,4 +1336,5 @@ Add one concise entry after each meaningful implementation session.
 2026-07-28 — Added Nitro/Vercel output, FastAPI container/Compose, CI, VPS deploy, daily schedule, Caddy example, and the owner setup checklist. Validated Compose memory/log/port settings and all 11 live workbook shapes; fixed disclosure/footer parsing and unavailable pre-2006 values. Docker Hub did not complete the base-image pull locally, so the image build remains a production/setup verification item.
 2026-07-28 — Began M5 strategy research implementation: enforced a 252-trading-day warm-up, added configurable execution delay, retained pre-start-date history, and added complete SPY-relative performance and risk metrics with tests.
 2026-07-28 — Completed M5 benchmark-aware research tools: added top-three 12-month momentum, 70/30 SPY-core flow and momentum sleeves, standardized flow confirmation with SPY fallback, and exposed exact assumptions, allocations, and benchmark-relative metrics in the strategy lab.
+2026-07-28 — Verified all four M5 strategies end to end against 85 monthly periods in the configured database, then passed 30 analytics tests, five web tests, lint, typecheck, and the production build.
 ```

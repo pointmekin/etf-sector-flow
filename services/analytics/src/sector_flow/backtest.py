@@ -240,7 +240,7 @@ def _momentum_holdings(
         item.ticker: _trailing_return(price_map[item.ticker], signal_date)
         for item in observations
     }
-    return sorted(returns, key=returns.get, reverse=True)[:3]  # type: ignore[arg-type]
+    return sorted(returns, key=lambda ticker: returns[ticker], reverse=True)[:3]
 
 
 def _trailing_return(prices: dict[date, float], signal_date: date) -> float:
