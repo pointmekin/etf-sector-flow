@@ -8,6 +8,7 @@ import {
 	signalEvent,
 } from "@sector-flow/db";
 import { z } from "zod";
+import { databaseDate } from "../lib/database-date";
 
 const number = (value: string | null) =>
 	value === null ? null : Number(value);
@@ -78,7 +79,7 @@ export const getDashboardData = createServerFn({ method: "GET" }).handler(
 					.orderBy(sectorDaily.date)
 			: [];
 		return {
-			date,
+			date: date ? databaseDate(date) : null,
 			latestJob: jobs[0]
 				? {
 						status: jobs[0].status,
@@ -88,7 +89,7 @@ export const getDashboardData = createServerFn({ method: "GET" }).handler(
 				: null,
 			sectors: rows.map((row) => ({
 				sector: row.sector,
-				date: row.date,
+				date: databaseDate(row.date),
 				ticker: row.representativeTicker,
 				flow1dUsd: number(row.flow1dUsd),
 				flow5dUsd: number(row.flow5dUsd),
@@ -109,11 +110,15 @@ export const getDashboardData = createServerFn({ method: "GET" }).handler(
 						? Number(previousRanks.get(row.sector)) - row.rank
 						: null,
 			})),
-			signals: signals.map((signal) => ({ ...signal, createdAt: undefined })),
+			signals: signals.map((signal) => ({
+				...signal,
+				date: databaseDate(signal.date),
+				createdAt: undefined,
+			})),
 			flowHistory: flowHistory.map((row) => ({
 				sector: row.sector,
 				ticker: row.ticker,
-				date: row.date,
+				date: databaseDate(row.date),
 				flowUsd: number(row.flowUsd),
 			})),
 		};
@@ -158,7 +163,7 @@ export const getSectorDetail = createServerFn({ method: "GET" })
 			sector: rows.at(-1)?.sector.sector ?? null,
 			history: rows.map(({ sector, fund }) => ({
 				sector: sector.sector,
-				date: sector.date,
+				date: databaseDate(sector.date),
 				ticker: sector.representativeTicker,
 				flow1dUsd: number(sector.flow1dUsd),
 				flow5dUsd: number(sector.flow5dUsd),
@@ -179,6 +184,10 @@ export const getSectorDetail = createServerFn({ method: "GET" })
 				flowUsd: number(fund?.flowUsd ?? null),
 				relativeReturn60d: number(sector.relativeReturn60d),
 			})),
-			signals: signals.map((signal) => ({ ...signal, createdAt: undefined })),
+			signals: signals.map((signal) => ({
+				...signal,
+				date: databaseDate(signal.date),
+				createdAt: undefined,
+			})),
 		};
 	});

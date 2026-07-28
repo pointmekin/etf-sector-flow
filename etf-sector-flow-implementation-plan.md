@@ -1339,4 +1339,5 @@ Add one concise entry after each meaningful implementation session.
 2026-07-28 — Verified all four M5 strategies end to end against 85 monthly periods in the configured database, then passed 30 analytics tests, five web tests, lint, typecheck, and the production build.
 2026-07-29 — Moved the weekday data refresh to 23:00 UTC Monday–Friday, corresponding to 06:00 Asia/Bangkok Tuesday–Saturday after each US trading session.
 2026-07-29 — Moved the analytics host binding to loopback port 8001 because port 8000 is occupied, updated deployment health checks, and added an Nginx reverse-proxy example with long-job timeouts.
+2026-07-29 — Normalized database dates at the web server boundary so production SSR never passes JavaScript Date objects to React; verified the Vercel-compatible production renderer with live data.
 ```
