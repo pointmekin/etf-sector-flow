@@ -6,13 +6,13 @@ not configured.
 
 ## Accounts and infrastructure
 
-- [ ] Create a GitHub repository and push `main`.
-- [ ] Create a Neon Postgres project and copy its pooled `DATABASE_URL` with SSL.
-- [ ] Create a Twelve Data API key on a plan that permits adjusted daily history
+- [X] Create a GitHub repository and push `main`.
+- [X] Create a Neon Postgres project and copy its pooled `DATABASE_URL` with SSL.
+- [X] Create a Twelve Data API key on a plan that permits adjusted daily history
       and the intended public use.
-- [ ] Confirm State Street and Twelve Data terms permit publishing the derived
+- [X] Confirm State Street and Twelve Data terms permit publishing the derived
       metrics for your audience.
-- [ ] Prepare a Linux VPS with Git, Docker Engine, Docker Compose v2, and Caddy
+- [X] Prepare a Linux VPS with Git, Docker Engine, Docker Compose v2, and Caddy
       (or an existing HTTPS reverse proxy). Start with at least 1 vCPU / 1 GB RAM.
 - [ ] Create a Vercel project connected to the repository.
 - [ ] Choose the public web and API domains and control their DNS records.
@@ -25,8 +25,8 @@ Do not prefix any secret with `VITE_`.
 
 ## Database
 
-- [ ] Export `DATABASE_URL` locally and run `bun run db:migrate`.
-- [ ] Confirm `GET /health` reports `"database": "ok"` after API deployment.
+- [X] Export `DATABASE_URL` locally and run `bun run db:migrate`.
+- [X] Confirm `GET /health` reports `"database": "ok"` after API deployment.
 
 ## VPS analytics service
 
