@@ -1,11 +1,35 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 
 type ValueFormat = "number" | "percent" | "usd";
 
-const WIDTH = 640;
-const HEIGHT = 240;
-const PLOT = { left: 74, right: 18, top: 12, bottom: 194 };
+/**
+ * The viewBox is sized from the container's real pixel width, so one SVG unit
+ * is one CSS pixel. Axis labels and tooltips then stay legible at every
+ * breakpoint instead of being scaled down with the chart.
+ */
+type Geometry = {
+	width: number;
+	height: number;
+	left: number;
+	right: number;
+	top: number;
+	bottom: number;
+};
+
+/** Room beneath the plot for the date labels and the "Date" axis title. */
+const AXIS_SPACE = 46;
+
+/** Centre line of the rotated y-axis title; `left` must clear it plus a label. */
+const Y_TITLE_X = 11;
+
+function geometry(
+	width: number,
+	height: number,
+	{ left, right = 18, top = 12 }: { left: number; right?: number; top?: number },
+): Geometry {
+	return { width, height, left, right, top, bottom: height - AXIS_SPACE };
+}
 
 export function MiniChart({
 	values,
@@ -22,46 +46,52 @@ export function MiniChart({
 	yAxisLabel: string;
 	ariaLabel?: string;
 }) {
+	const frame = useChartFrame({ ratio: 0.375, minHeight: 200, maxHeight: 300 });
+	const geo = geometry(frame.width, frame.height, { left: 74 });
 	const clean = values.map((value) => value ?? 0);
 	const domain = getDomain(clean, type === "bar");
-	const points = toPoints(clean, domain);
-	const hover = useChartHover(clean.length);
+	const points = toPoints(clean, domain, geo);
+	const hover = useChartHover(clean.length, geo);
 	const activeValue = hover.index === null ? null : clean[hover.index];
 
 	return (
-		<svg
-			className="mini-chart"
-			viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-			role="img"
-			aria-label={ariaLabel}
-			onPointerMove={hover.onPointerMove}
-			onPointerLeave={hover.clear}
-		>
-			<title>{ariaLabel}</title>
-			<desc>Hover over the chart to inspect values by date.</desc>
-			<ChartAxes
-				domain={domain}
-				labels={labels}
-				valueFormat={valueFormat}
-				yAxisLabel={yAxisLabel}
-			/>
-			{type === "bar" ? (
-				<Bars values={clean} domain={domain} />
-			) : (
-				<polyline className="chart-line strategy-line" points={points} />
-			)}
-			{hover.index !== null && activeValue !== null ? (
-				<SingleValueTooltip
-					index={hover.index}
-					length={clean.length}
-					value={activeValue}
-					date={labels?.[hover.index]}
-					format={valueFormat}
-					label={yAxisLabel}
+		<div className="chart-frame" ref={frame.ref}>
+			<svg
+				className="mini-chart"
+				viewBox={`0 0 ${geo.width} ${geo.height}`}
+				role="img"
+				aria-label={ariaLabel}
+				onPointerMove={hover.onPointerMove}
+				onPointerLeave={hover.clear}
+			>
+				<title>{ariaLabel}</title>
+				<desc>Hover over the chart to inspect values by date.</desc>
+				<ChartAxes
 					domain={domain}
+					labels={labels}
+					valueFormat={valueFormat}
+					yAxisLabel={yAxisLabel}
+					geo={geo}
 				/>
-			) : null}
-		</svg>
+				{type === "bar" ? (
+					<Bars values={clean} domain={domain} geo={geo} />
+				) : (
+					<polyline className="chart-line strategy-line" points={points} />
+				)}
+				{hover.index !== null && activeValue !== null ? (
+					<SingleValueTooltip
+						index={hover.index}
+						length={clean.length}
+						value={activeValue}
+						date={labels?.[hover.index]}
+						format={valueFormat}
+						label={yAxisLabel}
+						domain={domain}
+						geo={geo}
+					/>
+				) : null}
+			</svg>
+		</div>
 	);
 }
 
@@ -74,49 +104,62 @@ export function EquityComparisonChart({
 	strategy: number[];
 	spy: number[];
 }) {
+	// Taller and with a narrower y-axis gutter than MiniChart: this is the one
+	// chart that gets a full-width panel to itself.
+	const frame = useChartFrame({ ratio: 0.42, minHeight: 260, maxHeight: 440 });
+	const geo = geometry(frame.width, frame.height, { left: 64, right: 12 });
 	const domain = getDomain([...strategy, ...spy], false);
-	const hover = useChartHover(Math.min(dates.length, strategy.length, spy.length));
+	const hover = useChartHover(
+		Math.min(dates.length, strategy.length, spy.length),
+		geo,
+	);
 	return (
 		<div className="comparison-chart">
 			<ul className="chart-legend" aria-label="Chart legend">
 				<li className="strategy-key">Strategy</li>
 				<li className="spy-key">SPY</li>
 			</ul>
-			<svg
-				className="mini-chart"
-				viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-				role="img"
-				aria-label="Strategy and SPY growth of one dollar"
-				onPointerMove={hover.onPointerMove}
-				onPointerLeave={hover.clear}
-			>
-				<title>Strategy and SPY growth of one dollar</title>
-				<desc>Hover over the chart to compare Strategy and SPY values by date.</desc>
-				<ChartAxes
-					domain={domain}
-					labels={dates}
-					valueFormat="usd"
-					yAxisLabel="Equity"
-				/>
-				<polyline
-					className="chart-line strategy-line"
-					points={toPoints(strategy, domain)}
-				/>
-				<polyline
-					className="chart-line spy-line"
-					points={toPoints(spy, domain)}
-				/>
-				{hover.index !== null ? (
-					<ComparisonTooltip
-						index={hover.index}
-						length={dates.length}
-						date={dates[hover.index]}
-						strategy={strategy[hover.index]}
-						spy={spy[hover.index]}
+			<div className="chart-frame" ref={frame.ref}>
+				<svg
+					className="mini-chart"
+					viewBox={`0 0 ${geo.width} ${geo.height}`}
+					role="img"
+					aria-label="Strategy and SPY growth of one dollar"
+					onPointerMove={hover.onPointerMove}
+					onPointerLeave={hover.clear}
+				>
+					<title>Strategy and SPY growth of one dollar</title>
+					<desc>
+						Hover over the chart to compare Strategy and SPY values by date.
+					</desc>
+					<ChartAxes
 						domain={domain}
+						labels={dates}
+						valueFormat="usd"
+						yAxisLabel="Equity"
+						geo={geo}
 					/>
-				) : null}
-			</svg>
+					<polyline
+						className="chart-line strategy-line"
+						points={toPoints(strategy, domain, geo)}
+					/>
+					<polyline
+						className="chart-line spy-line"
+						points={toPoints(spy, domain, geo)}
+					/>
+					{hover.index !== null ? (
+						<ComparisonTooltip
+							index={hover.index}
+							length={dates.length}
+							date={dates[hover.index]}
+							strategy={strategy[hover.index]}
+							spy={spy[hover.index]}
+							domain={domain}
+							geo={geo}
+						/>
+					) : null}
+				</svg>
+			</div>
 		</div>
 	);
 }
@@ -129,6 +172,7 @@ function SingleValueTooltip({
 	format,
 	label,
 	domain,
+	geo,
 }: {
 	index: number;
 	length: number;
@@ -137,14 +181,21 @@ function SingleValueTooltip({
 	format: ValueFormat;
 	label: string;
 	domain: [number, number];
+	geo: Geometry;
 }) {
-	const x = xPosition(index, length);
-	const y = yPosition(value, domain);
-	const boxX = x > WIDTH - 180 ? x - 164 : x + 12;
-	const boxY = Math.max(PLOT.top + 4, Math.min(y - 50, PLOT.bottom - 48));
+	const x = xPosition(index, length, geo);
+	const y = yPosition(value, domain, geo);
+	const boxX = x > geo.width - 180 ? x - 164 : x + 12;
+	const boxY = Math.max(geo.top + 4, Math.min(y - 50, geo.bottom - 48));
 	return (
 		<g className="chart-tooltip">
-			<line className="hover-guide" x1={x} x2={x} y1={PLOT.top} y2={PLOT.bottom} />
+			<line
+				className="hover-guide"
+				x1={x}
+				x2={x}
+				y1={geo.top}
+				y2={geo.bottom}
+			/>
 			<circle
 				className={value >= 0 ? "tooltip-point positive" : "tooltip-point negative"}
 				cx={x}
@@ -169,6 +220,7 @@ function ComparisonTooltip({
 	strategy,
 	spy,
 	domain,
+	geo,
 }: {
 	index: number;
 	length: number;
@@ -176,23 +228,41 @@ function ComparisonTooltip({
 	strategy?: number;
 	spy?: number;
 	domain: [number, number];
+	geo: Geometry;
 }) {
 	if (strategy === undefined || spy === undefined) return null;
-	const x = xPosition(index, length);
-	const boxX = x > WIDTH - 200 ? x - 182 : x + 12;
+	const x = xPosition(index, length, geo);
+	const boxX = x > geo.width - 200 ? x - 182 : x + 12;
+	const boxY = geo.top + 8;
 	return (
 		<g className="chart-tooltip">
-			<line className="hover-guide" x1={x} x2={x} y1={PLOT.top} y2={PLOT.bottom} />
-			<circle className="tooltip-point strategy-point" cx={x} cy={yPosition(strategy, domain)} r="4" />
-			<circle className="tooltip-point spy-point" cx={x} cy={yPosition(spy, domain)} r="4" />
-			<rect x={boxX} y="20" width="170" height="62" rx="3" />
-			<text className="tooltip-date" x={boxX + 10} y="36">
+			<line
+				className="hover-guide"
+				x1={x}
+				x2={x}
+				y1={geo.top}
+				y2={geo.bottom}
+			/>
+			<circle
+				className="tooltip-point strategy-point"
+				cx={x}
+				cy={yPosition(strategy, domain, geo)}
+				r="4"
+			/>
+			<circle
+				className="tooltip-point spy-point"
+				cx={x}
+				cy={yPosition(spy, domain, geo)}
+				r="4"
+			/>
+			<rect x={boxX} y={boxY} width="170" height="62" rx="3" />
+			<text className="tooltip-date" x={boxX + 10} y={boxY + 16}>
 				{formatDate(date)}
 			</text>
-			<text className="tooltip-value strategy-value" x={boxX + 10} y="54">
+			<text className="tooltip-value strategy-value" x={boxX + 10} y={boxY + 34}>
 				Strategy: {formatTooltipValue(strategy, "usd")}
 			</text>
-			<text className="tooltip-value spy-value" x={boxX + 10} y="71">
+			<text className="tooltip-value spy-value" x={boxX + 10} y={boxY + 51}>
 				SPY: {formatTooltipValue(spy, "usd")}
 			</text>
 		</g>
@@ -204,22 +274,25 @@ function ChartAxes({
 	labels,
 	valueFormat,
 	yAxisLabel,
+	geo,
 }: {
 	domain: [number, number];
 	labels?: string[];
 	valueFormat: ValueFormat;
 	yAxisLabel: string;
+	geo: Geometry;
 }) {
 	const [min, max] = domain;
 	const ticks = [max, (max + min) / 2, min];
+	const midY = (geo.top + geo.bottom) / 2;
 	return (
 		<g className="chart-axes">
 			{ticks.map((tick) => {
-				const y = yPosition(tick, domain);
+				const y = yPosition(tick, domain, geo);
 				return (
 					<g key={tick}>
-						<line x1={PLOT.left} x2={WIDTH - PLOT.right} y1={y} y2={y} />
-						<text x={PLOT.left - 9} y={y + 4} textAnchor="end">
+						<line x1={geo.left} x2={geo.width - geo.right} y1={y} y2={y} />
+						<text x={geo.left - 9} y={y + 4} textAnchor="end">
 							{formatAxisValue(tick, valueFormat)}
 						</text>
 					</g>
@@ -227,25 +300,29 @@ function ChartAxes({
 			})}
 			<text
 				className="axis-title"
-				x="15"
-				y={(PLOT.top + PLOT.bottom) / 2}
+				x={Y_TITLE_X}
+				y={midY}
 				textAnchor="middle"
-				transform={`rotate(-90 15 ${(PLOT.top + PLOT.bottom) / 2})`}
+				transform={`rotate(-90 ${Y_TITLE_X} ${midY})`}
 			>
 				{yAxisLabel}
 			</text>
 			{labels?.length ? (
 				<>
-					<text x={PLOT.left} y="216" textAnchor="start">
+					<text x={geo.left} y={geo.height - 24} textAnchor="start">
 						{formatDate(labels[0])}
 					</text>
-					<text x={WIDTH - PLOT.right} y="216" textAnchor="end">
+					<text
+						x={geo.width - geo.right}
+						y={geo.height - 24}
+						textAnchor="end"
+					>
 						{formatDate(labels.at(-1))}
 					</text>
 					<text
 						className="axis-title"
-						x={WIDTH / 2}
-						y="234"
+						x={geo.width / 2}
+						y={geo.height - 6}
 						textAnchor="middle"
 					>
 						Date
@@ -259,13 +336,15 @@ function ChartAxes({
 function Bars({
 	values,
 	domain,
+	geo,
 }: {
 	values: number[];
 	domain: [number, number];
+	geo: Geometry;
 }) {
-	const plotWidth = WIDTH - PLOT.left - PLOT.right;
+	const plotWidth = geo.width - geo.left - geo.right;
 	const width = plotWidth / Math.max(values.length, 1);
-	const zero = yPosition(0, domain);
+	const zero = yPosition(0, domain, geo);
 	const occurrences = new Map<number, number>();
 	const samples = values.map((value) => {
 		const occurrence = (occurrences.get(value) ?? 0) + 1;
@@ -273,11 +352,11 @@ function Bars({
 		return { key: `${value}-${occurrence}`, value };
 	});
 	return samples.map(({ key, value }, index) => {
-		const y = yPosition(value, domain);
+		const y = yPosition(value, domain, geo);
 		return (
 			<rect
 				key={key}
-				x={PLOT.left + index * width}
+				x={geo.left + index * width}
 				width={Math.max(width - 1, 1)}
 				y={Math.min(y, zero)}
 				height={Math.max(Math.abs(zero - y), 1)}
@@ -300,21 +379,29 @@ function getDomain(values: number[], centered: boolean): [number, number] {
 	return [min - padding, max + padding];
 }
 
-function toPoints(values: number[], domain: [number, number]): string {
+function toPoints(
+	values: number[],
+	domain: [number, number],
+	geo: Geometry,
+): string {
 	return values
 		.map((value, index) => {
-			return `${xPosition(index, values.length)},${yPosition(value, domain)}`;
+			return `${xPosition(index, values.length, geo)},${yPosition(value, domain, geo)}`;
 		})
 		.join(" ");
 }
 
-function xPosition(index: number, length: number): number {
-	const plotWidth = WIDTH - PLOT.left - PLOT.right;
-	return PLOT.left + (index / Math.max(length - 1, 1)) * plotWidth;
+function xPosition(index: number, length: number, geo: Geometry): number {
+	const plotWidth = geo.width - geo.left - geo.right;
+	return geo.left + (index / Math.max(length - 1, 1)) * plotWidth;
 }
 
-function yPosition(value: number, [min, max]: [number, number]): number {
-	return PLOT.bottom - ((value - min) / (max - min)) * (PLOT.bottom - PLOT.top);
+function yPosition(
+	value: number,
+	[min, max]: [number, number],
+	geo: Geometry,
+): number {
+	return geo.bottom - ((value - min) / (max - min)) * (geo.bottom - geo.top);
 }
 
 function formatAxisValue(value: number, format: ValueFormat): string {
@@ -349,15 +436,50 @@ function formatDate(value: string | undefined): string {
 	return year && month && day ? `${month}/${day}/${year}` : value;
 }
 
-function useChartHover(length: number) {
+/**
+ * Tracks the rendered width of the chart container. The server has no layout,
+ * so it renders at a fixed fallback width and the client corrects on mount.
+ */
+function useChartFrame({
+	ratio,
+	minHeight,
+	maxHeight,
+	fallbackWidth = 640,
+}: {
+	ratio: number;
+	minHeight: number;
+	maxHeight: number;
+	fallbackWidth?: number;
+}) {
+	const ref = useRef<HTMLDivElement>(null);
+	const [width, setWidth] = useState(fallbackWidth);
+
+	useEffect(() => {
+		const node = ref.current;
+		if (!node) return;
+		const observer = new ResizeObserver((entries) => {
+			const measured = Math.round(entries[0]?.contentRect.width ?? 0);
+			if (measured > 0) setWidth(measured);
+		});
+		observer.observe(node);
+		return () => observer.disconnect();
+	}, []);
+
+	const height = Math.round(
+		Math.min(Math.max(width * ratio, minHeight), maxHeight),
+	);
+	return { ref, width, height };
+}
+
+function useChartHover(length: number, geo: Geometry) {
 	const [index, setIndex] = useState<number | null>(null);
 	function onPointerMove(event: ReactPointerEvent<SVGSVGElement>) {
 		if (length === 0) return;
 		const bounds = event.currentTarget.getBoundingClientRect();
-		const svgX = ((event.clientX - bounds.left) / bounds.width) * WIDTH;
+		const svgX = ((event.clientX - bounds.left) / bounds.width) * geo.width;
 		const progress = Math.min(
 			1,
-			Math.max(0, (svgX - PLOT.left) / (WIDTH - PLOT.left - PLOT.right)),
+			Math.max(0, (svgX - geo.left) / (geo.width - geo.left - geo.right)),
 		);
 		setIndex(Math.round(progress * Math.max(length - 1, 0)));
 	}

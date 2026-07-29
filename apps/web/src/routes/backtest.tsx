@@ -26,6 +26,31 @@ const labels: Record<string, string> = {
 	months_outperforming_spy: "Beat SPY",
 };
 
+const descriptions: Record<string, string> = {
+	cagr: "Compound annual growth rate — the steady yearly return that would produce this result.",
+	benchmark_cagr: "The same yearly return, for simply buying and holding SPY.",
+	excess_cagr:
+		"Strategy CAGR minus SPY CAGR. Positive means the rotation added value.",
+	maximum_drawdown:
+		"Largest peak-to-trough fall — the worst decline you would have had to sit through.",
+	benchmark_maximum_drawdown:
+		"SPY's worst peak-to-trough fall over the same window.",
+	annualized_volatility:
+		"How much monthly returns swing, stated per year. Higher means a bumpier ride.",
+	benchmark_annualized_volatility:
+		"SPY's return swing over the same window, for comparison.",
+	sharpe_ratio:
+		"Return earned per unit of total risk. Higher is better; above 1 is strong.",
+	information_ratio:
+		"Excess return over SPY per unit of tracking error — how reliably it beats the benchmark.",
+	tracking_error:
+		"How far returns stray from SPY. Higher means the portfolio behaves less like the market.",
+	turnover:
+		"Share of the portfolio traded at an average rebalance. More turnover means more cost.",
+	months_outperforming_spy:
+		"Share of months the strategy returned more than SPY.",
+};
+
 export function BacktestPage() {
 	const [result, setResult] = useState<BacktestResult | null>(null);
 	const [error, setError] = useState<string | null>(null);
@@ -145,6 +170,9 @@ export function BacktestResults({ result }: { result: BacktestResult }) {
 								? value.toFixed(2)
 								: `${(value * 100).toFixed(1)}%`}
 						</strong>
+						{descriptions[key] && (
+							<p className="metric-note">{descriptions[key]}</p>
+						)}
 					</article>
 				))}
 			</div>
@@ -182,9 +210,12 @@ export function BacktestResults({ result }: { result: BacktestResult }) {
 						<tbody>
 							{result.monthly_results.map((row) => (
 								<tr key={row.execution_date}>
-									<td>{row.signal_date}</td>
-									<td>{row.execution_date}</td>
-									<td>
+									<td data-label="Signal">{row.signal_date}</td>
+									<td data-label="Execution">{row.execution_date}</td>
+									<td
+										data-label="Allocation"
+										className="cell-holdings cell-wide"
+									>
 										<div className="holding-list">
 											{row.holdings.map((ticker) => (
 												<span key={ticker}>
@@ -196,10 +227,13 @@ export function BacktestResults({ result }: { result: BacktestResult }) {
 											))}
 										</div>
 									</td>
-									<td className={`flow-${tone(row.return)}`}>
+									<td data-label="Return" className={`flow-${tone(row.return)}`}>
 										{(row.return * 100).toFixed(2)}%
 									</td>
-									<td className={`flow-${tone(row.benchmark_return)}`}>
+									<td
+										data-label="SPY"
+										className={`flow-${tone(row.benchmark_return)}`}
+									>
 										{(row.benchmark_return * 100).toFixed(2)}%
 									</td>
 								</tr>
