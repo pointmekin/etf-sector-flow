@@ -382,8 +382,8 @@ function RankingTable({
 				<tbody>
 					{sectors.map((sector) => (
 						<tr key={sector.ticker}>
-							<td className="rank">{sector.rank}</td>
-							<td>
+							<td className="rank cell-rank">{sector.rank}</td>
+							<td className="cell-sector cell-wide">
 								<Link
 									to="/sectors/$ticker"
 									params={{ ticker: sector.ticker }}
@@ -394,7 +394,7 @@ function RankingTable({
 									<span>{sector.ticker}</span>
 								</Link>
 							</td>
-							<td>
+							<td className="cell-state cell-wide" data-label="State">
 								<span
 									className={`state state-${sector.state?.toLowerCase().replaceAll(" ", "-")}`}
 								>
@@ -402,36 +402,43 @@ function RankingTable({
 								</span>
 							</td>
 							<FlowCell
+								period="1D"
 								value={
 									metric === "usd" ? sector.flow1dUsd : sector.flow1dPctAum
 								}
 								label={value(sector, "flow1dUsd", "flow1dPctAum")}
 							/>
 							<FlowCell
+								period="5D"
 								value={
 									metric === "usd" ? sector.flow5dUsd : sector.flow5dPctAum
 								}
 								label={value(sector, "flow5dUsd", "flow5dPctAum")}
 							/>
 							<FlowCell
+								period="20D"
 								value={
 									metric === "usd" ? sector.flow20dUsd : sector.flow20dPctAum
 								}
 								label={value(sector, "flow20dUsd", "flow20dPctAum")}
 							/>
 							<FlowCell
+								period="60D"
 								value={
 									metric === "usd" ? sector.flow60dUsd : sector.flow60dPctAum
 								}
 								label={value(sector, "flow60dUsd", "flow60dPctAum")}
 							/>
-							<td>
+							<td data-label="Flow">
 								<Score value={sector.flowScore} />
 							</td>
-							<td>
+							<td data-label="DCA">
 								<Score value={sector.dcaScore} accent />
 							</td>
-							<td className={`flow-${tone(sector.rankChange)}`}>
+							<td
+								data-label="Δ Rank"
+								className={`flow-${tone(sector.rankChange)}`}
+							>
 								{sector.rankChange === null
 									? "—"
 									: sector.rankChange > 0
@@ -446,8 +453,20 @@ function RankingTable({
 	);
 }
 
-function FlowCell({ value, label }: { value: number | null; label: string }) {
-	return <td className={`flow-${tone(value)}`}>{label}</td>;
+function FlowCell({
+	value,
+	label,
+	period,
+}: {
+	value: number | null;
+	label: string;
+	period: string;
+}) {
+	return (
+		<td data-label={period} className={`flow-${tone(value)}`}>
+			{label}
+		</td>
+	);
 }
 
 function Score({
@@ -494,6 +513,7 @@ function FlowHeatmap({
 						return (
 							<span
 								key={label}
+								data-period={label}
 								className={`heat ${tone(value)}`}
 								title={`${sector.sector} ${label}: ${metric === "usd" ? formatUsd(value) : formatPercent(value)}`}
 							>

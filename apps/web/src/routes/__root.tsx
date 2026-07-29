@@ -4,6 +4,7 @@ import {
 	Scripts,
 	createRootRoute,
 } from "@tanstack/react-router";
+import { ThemeToggle, themeScript } from "../components/theme-toggle";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
@@ -48,9 +49,13 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en">
+		<html lang="en" suppressHydrationWarning>
 			<head>
 				<HeadContent />
+				<script
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: must run before first paint to avoid a theme flash
+					dangerouslySetInnerHTML={{ __html: themeScript }}
+				/>
 			</head>
 			<body>
 				<header className="site-header">
@@ -63,21 +68,24 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 						<span className="brand-mark">SF</span>
 						<span>Sector Flow</span>
 					</Link>
-					<nav aria-label="Primary navigation">
-						<Link
-							to="/"
-							search={{ metric: "pct" }}
-							activeProps={{ "aria-current": "page" }}
-						>
-							Dashboard
-						</Link>
-						<Link to="/backtest" activeProps={{ "aria-current": "page" }}>
-							Backtest
-						</Link>
-						<Link to="/methodology" activeProps={{ "aria-current": "page" }}>
-							Methodology
-						</Link>
-					</nav>
+					<div className="header-actions">
+						<nav aria-label="Primary navigation">
+							<Link
+								to="/"
+								search={{ metric: "pct" }}
+								activeProps={{ "aria-current": "page" }}
+							>
+								Dashboard
+							</Link>
+							<Link to="/backtest" activeProps={{ "aria-current": "page" }}>
+								Backtest
+							</Link>
+							<Link to="/methodology" activeProps={{ "aria-current": "page" }}>
+								Methodology
+							</Link>
+						</nav>
+						<ThemeToggle />
+					</div>
 				</header>
 				<main>{children}</main>
 				<footer>
